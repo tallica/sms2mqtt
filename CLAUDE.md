@@ -57,6 +57,10 @@ On the server the env file lives at `/etc/sms2mqtt/env` and is loaded by the sys
 Required: `MODEM_DEVICE`, `MQTT_BROKER`.  
 Everything else has a default.
 
+Notable optional vars:
+
+- `FORWARD_TO` — phone number to forward every received SMS to, in addition to MQTT. Format: `From: {number}\n{body}`. Empty = disabled.
+
 ## Conventions
 
 - Logging via `zerolog` — structured, console-formatted to stderr.
