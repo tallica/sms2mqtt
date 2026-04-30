@@ -14,8 +14,12 @@ import (
 	"github.com/tallica/sms2mqtt/mqttclient"
 )
 
+var version = "dev"
+
 func main() {
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: time.RFC3339})
+
+	log.Info().Str("version", version).Msg("sms2mqtt starting")
 
 	cfg, err := config.Load()
 	if err != nil {
