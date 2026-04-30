@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- MIT License
+- README: AI disclaimer, bot commands, full HA integration guide (sending SMS, status sensor, incoming SMS sensor)
+
+### Fixed
+
+- systemd unit now runs as `sms2mqtt` system user instead of non-existent `homeassistant`
+
+### Documentation
+
+- CLAUDE.md: trimmed to Claude-relevant content only; HA snippets and install steps moved to README
+
 ## [0.5.1] - 2026-05-01
 
 ### Changed
