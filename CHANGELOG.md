@@ -10,7 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Bot command framework (`bot` package) with a dispatch table replacing the hardcoded ping/pong check
-- `status` command — replies `sms2mqtt <version>` to the sender
+- `version` command — replies `sms2mqtt <version>` to the sender
+- `status` command — replies with version, uptime, signal strength (`AT+CSQ`), and last SMS time
 - Bot-handled messages are never forwarded via `FORWARD_TO`
 
 ## [0.4.1] - 2026-05-01

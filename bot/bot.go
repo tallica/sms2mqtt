@@ -1,5 +1,11 @@
 package bot
 
+import (
+	"fmt"
+	"strings"
+	"time"
+)
+
 // Command matches an incoming SMS body and produces a reply.
 type Command struct {
 	Match  func(body string) bool
@@ -37,4 +43,40 @@ func Version(version string) Command {
 		Match:  func(body string) bool { return body == "version" },
 		Handle: func(_, _ string) string { return "sms2mqtt " + version },
 	}
+}
+
+// Status reports version, uptime, signal strength, and last SMS time.
+// signal returns (dBm, ok, err) — ok=false means no signal, err is logged by the caller.
+func Status(version string, uptime func() time.Duration, lastSMS func() time.Time, signal func() (int, bool, error)) Command {
+	return Command{
+		Match: func(body string) bool { return body == "status" },
+		Handle: func(_, _ string) string {
+			parts := []string{"sms2mqtt " + version}
+			parts = append(parts, "up "+fmtDuration(uptime()))
+			if dbm, ok, _ := signal(); ok {
+				parts = append(parts, fmt.Sprintf("signal %d dBm", dbm))
+			} else {
+				parts = append(parts, "signal unknown")
+			}
+			if t := lastSMS(); !t.IsZero() {
+				parts = append(parts, "last SMS "+fmtDuration(time.Since(t))+" ago")
+			} else {
+				parts = append(parts, "last SMS never")
+			}
+			return strings.Join(parts, " | ")
+		},
+	}
+}
+
+func fmtDuration(d time.Duration) string {
+	if d < time.Minute {
+		return fmt.Sprintf("%ds", int(d.Seconds()))
+	}
+	d = d.Round(time.Minute)
+	h := int(d.Hours())
+	m := int(d.Minutes()) % 60
+	if h > 0 {
+		return fmt.Sprintf("%dh%dm", h, m)
+	}
+	return fmt.Sprintf("%dm", m)
 }

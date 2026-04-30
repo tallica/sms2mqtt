@@ -29,6 +29,7 @@ macOS cannot run the service directly — the Huawei E3272 requires the Linux `o
 | `modem` | `modem/modem.go` | Serial port open, AT command send/receive, drain |
 | `modem` | `modem/sms.go` | `ListSMS`, `DeleteSMS`, `SendSMS`, AT+CMGL parser |
 | `modem` | `modem/pdu.go` | PDU encoding — `buildPDU`, BCD address encoding, UCS-2 body encoding |
+| `modem` | `modem/signal.go` | `SignalStrength` — queries `AT+CSQ`, returns dBm |
 | `mqttclient` | `mqttclient/client.go` | Paho wrapper — LWT, publish inbox, send channel |
 | `config` | `config/config.go` | All config from env vars with defaults |
 
@@ -69,6 +70,7 @@ Notable optional vars:
 |---|---|---|
 | `ping` | `pong` (reply to sender) | Case-sensitive, exact match. Not forwarded via `FORWARD_TO`. |
 | `version` | `sms2mqtt <version>` | Reports the running binary version. Not forwarded via `FORWARD_TO`. |
+| `status` | `sms2mqtt <ver> \| up Xh Ym \| signal -Z dBm \| last SMS Nm ago` | Reports version, uptime, signal strength, last SMS time. Not forwarded. |
 
 Bot-handled messages are never forwarded. Add new commands in `bot/bot.go`.
 
