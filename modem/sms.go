@@ -102,7 +102,7 @@ func parseSMSList(lines []string) ([]SMS, error) {
 			if current.Body != "" {
 				current.Body += "\n"
 			}
-			current.Body += line
+			current.Body += decodeUCS2Hex(line)
 		}
 	}
 	if current != nil {

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Incoming SMS with emoji/Unicode are now decoded correctly — the modem returns UCS-2 hex in text mode, which is now transparently decoded before publishing to MQTT or forwarding
+
 ## [0.4.0] - 2026-04-30
 
 ### Changed

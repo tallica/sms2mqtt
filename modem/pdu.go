@@ -7,6 +7,30 @@ import (
 	"unicode/utf16"
 )
 
+// decodeUCS2Hex decodes a UCS-2 big-endian hex string as the Huawei E3272 returns
+// for non-GSM-7 incoming SMS in text mode. Returns the original string unchanged if
+// it does not look like UCS-2 hex (odd length, non-hex chars, or decode failure).
+func decodeUCS2Hex(s string) string {
+	if len(s) == 0 || len(s)%4 != 0 {
+		return s
+	}
+	up := strings.ToUpper(s)
+	for _, c := range up {
+		if !((c >= '0' && c <= '9') || (c >= 'A' && c <= 'F')) {
+			return s
+		}
+	}
+	b, err := hex.DecodeString(up)
+	if err != nil {
+		return s
+	}
+	u16 := make([]uint16, len(b)/2)
+	for i := range u16 {
+		u16[i] = uint16(b[i*2])<<8 | uint16(b[i*2+1])
+	}
+	return string(utf16.Decode(u16))
+}
+
 // buildPDU constructs an SMS-SUBMIT PDU with UCS-2 encoding.
 // Returns the uppercase hex string and the octet count (excluding the SMSC length byte).
 func buildPDU(to, body string) (string, int, error) {
