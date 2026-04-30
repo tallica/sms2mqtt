@@ -58,8 +58,12 @@ func (m *Modem) SendSMS(to, body string) error {
 		return fmt.Errorf("send body: %w", err)
 	}
 
-	// SMS send can take several seconds
+	// SMS send can take several seconds.
+	// +CMGS: is always followed by OK — read both so the buffer is clean before
+	// the deferred AT+CMGF=1 restore runs; consuming only +CMGS: leaves a stale
+	// OK that Command() would misread as the CMGF=1 acknowledgement.
 	deadline := time.Now().Add(15 * time.Second)
+	cmgsSeen := false
 	for {
 		line, err := m.readLine(deadline)
 		if err != nil {
@@ -68,7 +72,11 @@ func (m *Modem) SendSMS(to, body string) error {
 		if line == "" {
 			continue
 		}
-		if line == "OK" || strings.HasPrefix(line, "+CMGS:") {
+		if strings.HasPrefix(line, "+CMGS:") {
+			cmgsSeen = true
+			continue
+		}
+		if line == "OK" && cmgsSeen {
 			return nil
 		}
 		if line == "ERROR" || strings.HasPrefix(line, "+CMS ERROR") {
