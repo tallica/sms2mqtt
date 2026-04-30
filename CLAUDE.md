@@ -59,7 +59,13 @@ Everything else has a default.
 
 Notable optional vars:
 
-- `FORWARD_TO` — phone number to forward every received SMS to, in addition to MQTT. Format: `From: {number}\n{body}`. Empty = disabled.
+- `FORWARD_TO` — phone number to forward every received SMS to, in addition to MQTT. Format: `From: {number}\n{body}`. Empty = disabled. Ping messages are never forwarded.
+
+## Built-in SMS commands
+
+| Message | Response | Notes |
+|---|---|---|
+| `ping` | `pong` (reply to sender) | Case-sensitive, exact match. Not forwarded via `FORWARD_TO`. |
 
 ## Conventions
 
