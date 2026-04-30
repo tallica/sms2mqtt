@@ -22,15 +22,23 @@ go build ./...
 
 # Cross-compile and deploy to remote Linux host
 export REMOTE=user@your-linux-box
-make deploy       # builds linux/amd64 binary, scps it to $REMOTE:/usr/local/bin/sms2mqtt
+make deploy            # default: linux/arm64 (Raspberry Pi 4 64-bit)
+make deploy ARCH=amd64 # x86-64 host
+make deploy ARCH=arm   # Pi 4 with 32-bit OS (GOARM=7)
 
 # Service control
 make start
 make restart
 make stop
 make status
-make logs         # tails journalctl -fu sms2mqtt on the remote
+make logs              # tails journalctl -fu sms2mqtt on the remote
 ```
+
+| `ARCH` | Target |
+|---|---|
+| `arm64` | Raspberry Pi 4, 64-bit OS (default) |
+| `arm` | Raspberry Pi 4, 32-bit OS |
+| `amd64` | x86-64 Linux host |
 
 macOS note: the Huawei E3272 requires Linux kernel drivers (`option` module) to appear as a serial port. It will not expose a `cu.*` device on macOS, so the modem must be connected to the Linux host.
 
