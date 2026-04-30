@@ -70,7 +70,7 @@ Notable optional vars:
 |---|---|---|
 | `ping` | `pong` (reply to sender) | Case-sensitive, exact match. Not forwarded via `FORWARD_TO`. |
 | `version` | `sms2mqtt <version>` | Reports the running binary version. Not forwarded via `FORWARD_TO`. |
-| `status` | `sms2mqtt <ver> \| up Xh Ym \| signal -Z dBm \| last SMS Nm ago` | Reports version, uptime, signal strength, last SMS time. Not forwarded. |
+| `status` | `sms2mqtt <ver> \| up Xh Ym \| signal -Z dBm` | Reports version, uptime, and signal strength. Not forwarded. |
 
 Bot-handled messages are never forwarded. Add new commands in `bot/bot.go`.
 
@@ -81,6 +81,55 @@ Bot-handled messages are never forwarded. Add new commands in `bot/bot.go`.
 - No mocks — the modem package is thin enough to test against a real device or a pty.
 - Keep `main.go` as a wiring layer only — no business logic.
 - Update `CHANGELOG.md` under `## [Unreleased]` for every notable change.
+
+## Home Assistant integration
+
+### Sending SMS
+
+Use `mqtt.publish` in scripts or automations — there is no longer a `notify.sms` platform:
+
+```yaml
+notify_sms_michal:
+  alias: "Send SMS to Michal"
+  fields:
+    message:
+      description: "The message content"
+      example: "The light is on!"
+  sequence:
+  - action: mqtt.publish
+    data:
+      topic: sms2mqtt/send
+      payload: "{{ {'to': states('sensor.michal_phone_number'), 'body': message} | to_json }}"
+  mode: queued
+  max: 3
+  icon: mdi:chat-alert
+```
+
+### Status sensor
+
+```yaml
+mqtt:
+  binary_sensor:
+    - name: "sms2mqtt"
+      state_topic: sms2mqtt/status
+      payload_on: online
+      payload_off: offline
+      device_class: connectivity
+```
+
+### Incoming SMS sensor
+
+```yaml
+mqtt:
+  sensor:
+    - name: "Last SMS"
+      state_topic: sms2mqtt/inbox
+      value_template: "{{ value_json.from }}"
+      json_attributes_topic: sms2mqtt/inbox
+      json_attributes_template: "{{ value_json | to_json }}"
+```
+
+Gives `sensor.last_sms` with `from`, `body`, and `time` attributes. Use an MQTT trigger on `sms2mqtt/inbox` to react to incoming messages in automations.
 
 ## Deployment
 
