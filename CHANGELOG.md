@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-04-30
+
 ### Changed
 
 - `SendSMS` now uses PDU mode with UCS-2 encoding, supporting emoji and full Unicode (fixes `+CMS ERROR: 500` on non-GSM characters)
@@ -57,7 +59,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - systemd unit file with `dialout` group for serial port access
 - `.env.example` template
 
-[Unreleased]: https://github.com/tallica/sms2mqtt/compare/v0.3.1...HEAD
+[Unreleased]: https://github.com/tallica/sms2mqtt/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/tallica/sms2mqtt/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/tallica/sms2mqtt/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/tallica/sms2mqtt/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/tallica/sms2mqtt/compare/v0.1.1...v0.2.0
