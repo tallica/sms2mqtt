@@ -7,9 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-05-01
+
 ### Fixed
 
 - Incoming SMS with emoji/Unicode are now decoded correctly — the modem returns UCS-2 hex in text mode, which is now transparently decoded before publishing to MQTT or forwarding
+- Read trailing `OK` after `+CMGS:` before restoring text mode, preventing stale buffer bytes from causing `+CMS ERROR: operation not allowed` on the next poll
 
 ## [0.4.0] - 2026-04-30
 
@@ -63,7 +66,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - systemd unit file with `dialout` group for serial port access
 - `.env.example` template
 
-[Unreleased]: https://github.com/tallica/sms2mqtt/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/tallica/sms2mqtt/compare/v0.4.1...HEAD
+[0.4.1]: https://github.com/tallica/sms2mqtt/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/tallica/sms2mqtt/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/tallica/sms2mqtt/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/tallica/sms2mqtt/compare/v0.2.0...v0.3.0
