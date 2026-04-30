@@ -94,7 +94,7 @@ func pollSMS(m *modem.Modem, mqtt *mqttclient.Client, forwardTo string) {
 				log.Info().Str("to", sms.From).Msg("pong sent")
 			}
 		}
-		if forwardTo != "" {
+		if forwardTo != "" && sms.Body != "ping" {
 			body := fmt.Sprintf("From: %s\n%s", sms.From, sms.Body)
 			if err := m.SendSMS(forwardTo, body); err != nil {
 				log.Error().Err(err).Str("to", forwardTo).Msg("forward failed")
