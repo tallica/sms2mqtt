@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-05-01
+
+### Changed
+
+- `status` command no longer includes last SMS time — version, uptime, and signal are sufficient
+
 ## [0.5.0] - 2026-05-01
 
 ### Added
@@ -75,7 +81,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - systemd unit file with `dialout` group for serial port access
 - `.env.example` template
 
-[Unreleased]: https://github.com/tallica/sms2mqtt/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/tallica/sms2mqtt/compare/v0.5.1...HEAD
+[0.5.1]: https://github.com/tallica/sms2mqtt/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/tallica/sms2mqtt/compare/v0.4.1...v0.5.0
 [0.4.1]: https://github.com/tallica/sms2mqtt/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/tallica/sms2mqtt/compare/v0.3.1...v0.4.0
