@@ -2,10 +2,10 @@ package modem
 
 import (
 	"fmt"
-	"log"
 	"strings"
 	"time"
 
+	"github.com/rs/zerolog/log"
 	"go.bug.st/serial"
 )
 
@@ -49,9 +49,9 @@ func (m *Modem) init() error {
 		}
 	}
 
-	// Optional: some modems don't support AT+CSCS
+	// Optional: set GSM charset; may fail if SIM is absent
 	if _, err := m.Command(`AT+CSCS="GSM"`); err != nil {
-		log.Printf("warning: AT+CSCS not supported, using modem default charset: %v", err)
+		log.Warn().Err(err).Msg("AT+CSCS failed, using modem default charset")
 	}
 
 	return nil
