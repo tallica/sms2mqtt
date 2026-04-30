@@ -50,7 +50,6 @@ func main() {
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 
 	startTime := time.Now()
-	var lastSMSTime time.Time
 
 	b := bot.New(
 		bot.Ping(),
@@ -58,7 +57,6 @@ func main() {
 		bot.Status(
 			version,
 			func() time.Duration { return time.Since(startTime) },
-			func() time.Time { return lastSMSTime },
 			m.SignalStrength,
 		),
 	)
@@ -72,9 +70,7 @@ func main() {
 	for {
 		select {
 		case <-ticker.C:
-			if t := pollSMS(m, mqtt, b, cfg.ForwardTo); !t.IsZero() {
-				lastSMSTime = t
-			}
+			pollSMS(m, mqtt, b, cfg.ForwardTo)
 
 		case req := <-mqtt.SendRequests():
 			log.Info().Str("to", req.To).Msg("sending SMS")
@@ -91,17 +87,13 @@ func main() {
 	}
 }
 
-// pollSMS fetches and processes all pending SMS. Returns the receive time of the
-// last message processed, or zero if none.
-func pollSMS(m *modem.Modem, mqtt *mqttclient.Client, b *bot.Bot, forwardTo string) time.Time {
+func pollSMS(m *modem.Modem, mqtt *mqttclient.Client, b *bot.Bot, forwardTo string) {
 	messages, err := m.ListSMS()
 	if err != nil {
 		log.Error().Err(err).Msg("list SMS failed")
-		return time.Time{}
+		return
 	}
-	var lastTime time.Time
 	for _, sms := range messages {
-		lastTime = sms.Time
 		log.Info().Str("from", sms.From).Str("body", sms.Body).Msg("received SMS")
 		mqtt.PublishInbox(mqttclient.InboxMessage{
 			From: sms.From,
@@ -126,5 +118,4 @@ func pollSMS(m *modem.Modem, mqtt *mqttclient.Client, b *bot.Bot, forwardTo stri
 			log.Error().Err(err).Int("index", sms.Index).Msg("delete SMS failed")
 		}
 	}
-	return lastTime
 }

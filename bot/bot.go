@@ -45,9 +45,9 @@ func Version(version string) Command {
 	}
 }
 
-// Status reports version, uptime, signal strength, and last SMS time.
-// signal returns (dBm, ok, err) — ok=false means no signal, err is logged by the caller.
-func Status(version string, uptime func() time.Duration, lastSMS func() time.Time, signal func() (int, bool, error)) Command {
+// Status reports version, uptime, and signal strength.
+// signal returns (dBm, ok, err) — ok=false means no signal, err is ignored.
+func Status(version string, uptime func() time.Duration, signal func() (int, bool, error)) Command {
 	return Command{
 		Match: func(body string) bool { return body == "status" },
 		Handle: func(_, _ string) string {
@@ -57,11 +57,6 @@ func Status(version string, uptime func() time.Duration, lastSMS func() time.Tim
 				parts = append(parts, fmt.Sprintf("signal %d dBm", dbm))
 			} else {
 				parts = append(parts, "signal unknown")
-			}
-			if t := lastSMS(); !t.IsZero() {
-				parts = append(parts, "last SMS "+fmtDuration(time.Since(t))+" ago")
-			} else {
-				parts = append(parts, "last SMS never")
 			}
 			return strings.Join(parts, " | ")
 		},
