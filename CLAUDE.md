@@ -9,7 +9,7 @@
 Development is on macOS; the service runs on a remote Linux host over SSH.
 
 ```bash
-go build ./...              # compile check (macOS)
+make build                  # compile check (macOS)
 make deploy                 # cross-compile linux/arm64 + scp to $REMOTE:/usr/local/bin/sms2mqtt
 make deploy ARCH=amd64      # x86-64 target
 make deploy ARCH=arm        # Pi 4 32-bit OS

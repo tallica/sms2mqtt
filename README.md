@@ -157,6 +157,10 @@ mqtt:
 
 See [CHANGELOG.md](CHANGELOG.md).
 
+## License
+
+MIT — see [LICENSE](LICENSE).
+
 ---
 
 🤖 Built with [Claude Code](https://claude.ai/code)
