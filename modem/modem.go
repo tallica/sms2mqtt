@@ -92,9 +92,10 @@ func (m *Modem) CommandRaw(data []byte) error {
 	return err
 }
 
-// readLine reads one CR/LF-terminated line from the port, respecting a deadline.
-// go.bug.st/serial returns (0, nil) on timeout, so we poll with a short interval
-// and check the deadline ourselves rather than relying on bufio.
+// readLine reads one line from the port, respecting a deadline.
+// Handles \r, \n, and \r\n line endings — the Huawei E3272 may use any of them.
+// go.bug.st/serial returns (0, nil) on interval expiry, so we poll with a short
+// interval and check the deadline ourselves rather than relying on bufio.
 func (m *Modem) readLine(deadline time.Time) (string, error) {
 	_ = m.port.SetReadTimeout(100 * time.Millisecond)
 	var buf []byte
@@ -107,12 +108,13 @@ func (m *Modem) readLine(deadline time.Time) (string, error) {
 		if n == 0 {
 			continue // poll interval elapsed, keep waiting
 		}
-		if b[0] == '\n' {
-			return strings.TrimSpace(string(buf)), nil
+		if b[0] == '\r' || b[0] == '\n' {
+			if len(buf) > 0 {
+				return string(buf), nil
+			}
+			continue // skip leading or paired CR/LF
 		}
-		if b[0] != '\r' {
-			buf = append(buf, b[0])
-		}
+		buf = append(buf, b[0])
 	}
 	return "", fmt.Errorf("read timeout")
 }
