@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-04-30
+
+### Fixed
+
+- `readLine` now treats `\r` as a line terminator in addition to `\n`, fixing indefinite hangs on modems that use CR-only line endings (Huawei E3272)
+- `+CME ERROR` responses now correctly terminate AT commands instead of being silently collected and causing a read timeout
+- `AT+CSCS="GSM"` demoted to optional — logs a warning instead of failing startup when the modem rejects it (e.g. SIM absent or unsupported firmware)
+- Modem package now uses `zerolog` consistently instead of stdlib `log`
+
 ## [0.1.0] - 2026-04-30
 
 ### Added
@@ -22,5 +31,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - systemd unit file with `dialout` group for serial port access
 - `.env.example` template
 
-[Unreleased]: https://github.com/tallica/sms2mqtt/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/tallica/sms2mqtt/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/tallica/sms2mqtt/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/tallica/sms2mqtt/releases/tag/v0.1.0
