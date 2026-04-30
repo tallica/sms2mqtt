@@ -10,6 +10,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
+	"github.com/tallica/sms2mqtt/bot"
 	"github.com/tallica/sms2mqtt/config"
 	"github.com/tallica/sms2mqtt/modem"
 	"github.com/tallica/sms2mqtt/mqttclient"
@@ -48,6 +49,11 @@ func main() {
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 
+	b := bot.New(
+		bot.Ping(),
+		bot.Status(version),
+	)
+
 	if cfg.ForwardTo != "" {
 		log.Info().Str("to", cfg.ForwardTo).Msg("SMS forwarding enabled")
 	}
@@ -57,7 +63,7 @@ func main() {
 	for {
 		select {
 		case <-ticker.C:
-			pollSMS(m, mqtt, cfg.ForwardTo)
+			pollSMS(m, mqtt, b, cfg.ForwardTo)
 
 		case req := <-mqtt.SendRequests():
 			log.Info().Str("to", req.To).Msg("sending SMS")
@@ -74,7 +80,7 @@ func main() {
 	}
 }
 
-func pollSMS(m *modem.Modem, mqtt *mqttclient.Client, forwardTo string) {
+func pollSMS(m *modem.Modem, mqtt *mqttclient.Client, b *bot.Bot, forwardTo string) {
 	messages, err := m.ListSMS()
 	if err != nil {
 		log.Error().Err(err).Msg("list SMS failed")
@@ -87,14 +93,13 @@ func pollSMS(m *modem.Modem, mqtt *mqttclient.Client, forwardTo string) {
 			Body: sms.Body,
 			Time: sms.Time.Format(time.RFC3339),
 		})
-		if sms.Body == "ping" {
-			if err := m.SendSMS(sms.From, "pong"); err != nil {
-				log.Error().Err(err).Str("to", sms.From).Msg("pong failed")
+		if reply, ok := b.Reply(sms.From, sms.Body); ok {
+			if err := m.SendSMS(sms.From, reply); err != nil {
+				log.Error().Err(err).Str("to", sms.From).Msg("bot reply failed")
 			} else {
-				log.Info().Str("to", sms.From).Msg("pong sent")
+				log.Info().Str("to", sms.From).Str("reply", reply).Msg("bot reply sent")
 			}
-		}
-		if forwardTo != "" && sms.Body != "ping" {
+		} else if forwardTo != "" {
 			body := fmt.Sprintf("From: %s\n%s", sms.From, sms.Body)
 			if err := m.SendSMS(forwardTo, body); err != nil {
 				log.Error().Err(err).Str("to", forwardTo).Msg("forward failed")

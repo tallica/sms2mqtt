@@ -24,7 +24,8 @@ macOS cannot run the service directly — the Huawei E3272 requires the Linux `o
 
 | Package | File | Role |
 |---|---|---|
-| `main` | `main.go` | Wires modem + MQTT; drives the poll/send select loop |
+| `main` | `main.go` | Wires modem + MQTT + bot; drives the poll/send select loop |
+| `bot` | `bot/bot.go` | Command dispatch — `Bot`, built-in `Ping()` and `Status()` commands |
 | `modem` | `modem/modem.go` | Serial port open, AT command send/receive, drain |
 | `modem` | `modem/sms.go` | `ListSMS`, `DeleteSMS`, `SendSMS`, AT+CMGL parser |
 | `modem` | `modem/pdu.go` | PDU encoding — `buildPDU`, BCD address encoding, UCS-2 body encoding |
@@ -67,6 +68,9 @@ Notable optional vars:
 | Message | Response | Notes |
 |---|---|---|
 | `ping` | `pong` (reply to sender) | Case-sensitive, exact match. Not forwarded via `FORWARD_TO`. |
+| `status` | `sms2mqtt <version>` | Reports the running binary version. Not forwarded via `FORWARD_TO`. |
+
+Bot-handled messages are never forwarded. Add new commands in `bot/bot.go`.
 
 ## Conventions
 
