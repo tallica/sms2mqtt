@@ -7,8 +7,9 @@ import (
 )
 
 type Config struct {
-	Modem ModemConfig
-	MQTT  MQTTConfig
+	Modem     ModemConfig
+	MQTT      MQTTConfig
+	ForwardTo string // optional: phone number to forward received SMS to
 }
 
 type ModemConfig struct {
@@ -44,6 +45,8 @@ func Load() (*Config, error) {
 			TopicStatus: env("MQTT_TOPIC_STATUS", "sms2mqtt/status"),
 		},
 	}
+
+	cfg.ForwardTo = env("FORWARD_TO", "")
 
 	if cfg.Modem.Device == "" {
 		return nil, fmt.Errorf("MODEM_DEVICE is required")

@@ -58,6 +58,7 @@ All configuration is via environment variables:
 | `MQTT_TOPIC_INBOX` | `sms2mqtt/inbox` | Topic for received SMS |
 | `MQTT_TOPIC_SEND` | `sms2mqtt/send` | Topic to trigger outgoing SMS |
 | `MQTT_TOPIC_STATUS` | `sms2mqtt/status` | LWT topic |
+| `FORWARD_TO` | _(none)_ | Phone number to forward received SMS to |
 
 Copy `.env.example` and fill in your values.
 

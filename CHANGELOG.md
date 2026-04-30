@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `FORWARD_TO` env var: when set, received SMS are forwarded to that number in addition to MQTT, formatted as `From: {number}\n{body}`
+
 ## [0.1.1] - 2026-04-30
 
 ### Fixed

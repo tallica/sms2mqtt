@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
@@ -47,12 +48,16 @@ func main() {
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 
+	if cfg.ForwardTo != "" {
+		log.Info().Str("to", cfg.ForwardTo).Msg("SMS forwarding enabled")
+	}
+
 	log.Info().Int("interval_s", cfg.Modem.PollSeconds).Msg("polling started")
 
 	for {
 		select {
 		case <-ticker.C:
-			pollSMS(m, mqtt)
+			pollSMS(m, mqtt, cfg.ForwardTo)
 
 		case req := <-mqtt.SendRequests():
 			log.Info().Str("to", req.To).Msg("sending SMS")
@@ -69,7 +74,7 @@ func main() {
 	}
 }
 
-func pollSMS(m *modem.Modem, mqtt *mqttclient.Client) {
+func pollSMS(m *modem.Modem, mqtt *mqttclient.Client, forwardTo string) {
 	messages, err := m.ListSMS()
 	if err != nil {
 		log.Error().Err(err).Msg("list SMS failed")
@@ -82,6 +87,14 @@ func pollSMS(m *modem.Modem, mqtt *mqttclient.Client) {
 			Body: sms.Body,
 			Time: sms.Time.Format(time.RFC3339),
 		})
+		if forwardTo != "" {
+			body := fmt.Sprintf("From: %s\n%s", sms.From, sms.Body)
+			if err := m.SendSMS(forwardTo, body); err != nil {
+				log.Error().Err(err).Str("to", forwardTo).Msg("forward failed")
+			} else {
+				log.Info().Str("to", forwardTo).Str("from", sms.From).Msg("SMS forwarded")
+			}
+		}
 		if err := m.DeleteSMS(sms.Index); err != nil {
 			log.Error().Err(err).Int("index", sms.Index).Msg("delete SMS failed")
 		}
