@@ -1,0 +1,17 @@
+[Unit]
+Description=SMS to MQTT bridge
+After=network.target
+
+[Service]
+Type=simple
+User=homeassistant
+EnvironmentFile=/etc/sms2mqtt/env
+ExecStart=/usr/local/bin/sms2mqtt
+Restart=on-failure
+RestartSec=5s
+
+# Give access to serial port
+SupplementaryGroups=dialout
+
+[Install]
+WantedBy=multi-user.target
