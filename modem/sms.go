@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/rs/zerolog/log"
 )
 
 type SMS struct {
@@ -28,21 +30,35 @@ func (m *Modem) DeleteSMS(index int) error {
 	return err
 }
 
-// SendSMS sends a text message to the given number.
+// SendSMS sends a message to the given number using PDU mode with UCS-2 encoding,
+// which supports the full Unicode range including emoji. Text mode is restored afterwards.
 func (m *Modem) SendSMS(to, body string) error {
-	// Start the send command — modem will reply with "> " prompt
-	if _, err := fmt.Fprintf(m.port, "AT+CMGS=\"%s\"\r", to); err != nil {
+	pdu, n, err := buildPDU(to, body)
+	if err != nil {
+		return fmt.Errorf("encode PDU: %w", err)
+	}
+
+	if _, err := m.Command("AT+CMGF=0"); err != nil {
+		return fmt.Errorf("PDU mode: %w", err)
+	}
+	defer func() {
+		if _, err := m.Command("AT+CMGF=1"); err != nil {
+			log.Warn().Err(err).Msg("restore text mode after send")
+		}
+	}()
+
+	// Modem replies with "> " prompt (not OK), so write directly and wait
+	if _, err := fmt.Fprintf(m.port, "AT+CMGS=%d\r", n); err != nil {
 		return fmt.Errorf("send header: %w", err)
 	}
 	time.Sleep(300 * time.Millisecond)
 
-	// Send body terminated with Ctrl-Z (0x1A)
-	payload := append([]byte(body), 0x1A)
+	payload := append([]byte(pdu), 0x1A)
 	if err := m.CommandRaw(payload); err != nil {
 		return fmt.Errorf("send body: %w", err)
 	}
 
-	// Read until OK or ERROR — SMS send can take several seconds
+	// SMS send can take several seconds
 	deadline := time.Now().Add(15 * time.Second)
 	for {
 		line, err := m.readLine(deadline)
