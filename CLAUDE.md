@@ -68,7 +68,7 @@ Notable optional vars:
 | Message | Response | Notes |
 |---|---|---|
 | `ping` | `pong` (reply to sender) | Case-sensitive, exact match. Not forwarded via `FORWARD_TO`. |
-| `status` | `sms2mqtt <version>` | Reports the running binary version. Not forwarded via `FORWARD_TO`. |
+| `version` | `sms2mqtt <version>` | Reports the running binary version. Not forwarded via `FORWARD_TO`. |
 
 Bot-handled messages are never forwarded. Add new commands in `bot/bot.go`.
 

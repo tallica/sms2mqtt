@@ -51,7 +51,7 @@ func main() {
 
 	b := bot.New(
 		bot.Ping(),
-		bot.Status(version),
+		bot.Version(version),
 	)
 
 	if cfg.ForwardTo != "" {

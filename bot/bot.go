@@ -32,9 +32,9 @@ func Ping() Command {
 	}
 }
 
-func Status(version string) Command {
+func Version(version string) Command {
 	return Command{
-		Match:  func(body string) bool { return body == "status" },
+		Match:  func(body string) bool { return body == "version" },
 		Handle: func(_, _ string) string { return "sms2mqtt " + version },
 	}
 }
