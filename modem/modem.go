@@ -1,7 +1,6 @@
 package modem
 
 import (
-	"bufio"
 	"fmt"
 	"strings"
 	"time"
@@ -10,8 +9,7 @@ import (
 )
 
 type Modem struct {
-	port   serial.Port
-	reader *bufio.Reader
+	port serial.Port
 }
 
 func Open(device string, baud int) (*Modem, error) {
@@ -20,15 +18,9 @@ func Open(device string, baud int) (*Modem, error) {
 		return nil, fmt.Errorf("open serial %s: %w", device, err)
 	}
 
-	m := &Modem{
-		port:   port,
-		reader: bufio.NewReader(port),
-	}
+	m := &Modem{port: port}
 
-	// Flush any stale data
-	_ = port.SetReadTimeout(200 * time.Millisecond)
 	m.drain()
-	_ = port.SetReadTimeout(5 * time.Second)
 
 	if err := m.init(); err != nil {
 		port.Close()
@@ -45,10 +37,10 @@ func (m *Modem) Close() error {
 // init puts the modem into a known state.
 func (m *Modem) init() error {
 	for _, cmd := range []string{
-		"ATZ",          // reset
-		"ATE0",         // echo off
-		"AT+CMGF=1",   // SMS text mode
-		"AT+CSCS=\"GSM\"", // GSM character set
+		"ATZ",               // reset
+		"ATE0",              // echo off
+		"AT+CMGF=1",        // SMS text mode
+		`AT+CSCS="GSM"`,    // GSM character set
 		"AT+CNMI=0,0,0,0,0", // disable SMS push notifications (we poll)
 	} {
 		if _, err := m.Command(cmd); err != nil {
@@ -60,21 +52,19 @@ func (m *Modem) init() error {
 
 // Command sends an AT command and returns the response lines (without OK/ERROR).
 func (m *Modem) Command(cmd string) ([]string, error) {
-	_ = m.port.SetReadTimeout(5 * time.Second)
-
 	if _, err := fmt.Fprintf(m.port, "%s\r\n", cmd); err != nil {
 		return nil, fmt.Errorf("write: %w", err)
 	}
 
 	var lines []string
+	deadline := time.Now().Add(5 * time.Second)
 	for {
-		line, err := m.reader.ReadString('\n')
-		line = strings.TrimSpace(line)
-		if err != nil || line == "" {
-			if err != nil {
-				return nil, fmt.Errorf("read: %w", err)
-			}
-			continue
+		line, err := m.readLine(deadline)
+		if err != nil {
+			return nil, fmt.Errorf("command %q: %w", cmd, err)
+		}
+		if line == "" || line == cmd {
+			continue // skip blank lines and echo
 		}
 		switch line {
 		case "OK":
@@ -82,9 +72,10 @@ func (m *Modem) Command(cmd string) ([]string, error) {
 		case "ERROR", "NO CARRIER":
 			return nil, fmt.Errorf("modem error for %q: %s", cmd, line)
 		default:
-			// skip echo
-			if line != cmd {
+			if !strings.HasPrefix(line, "+CMS ERROR") {
 				lines = append(lines, line)
+			} else {
+				return nil, fmt.Errorf("modem error for %q: %s", cmd, line)
 			}
 		}
 	}
@@ -96,8 +87,34 @@ func (m *Modem) CommandRaw(data []byte) error {
 	return err
 }
 
-// drain reads and discards all pending data.
+// readLine reads one CR/LF-terminated line from the port, respecting a deadline.
+// go.bug.st/serial returns (0, nil) on timeout, so we poll with a short interval
+// and check the deadline ourselves rather than relying on bufio.
+func (m *Modem) readLine(deadline time.Time) (string, error) {
+	_ = m.port.SetReadTimeout(100 * time.Millisecond)
+	var buf []byte
+	b := make([]byte, 1)
+	for time.Now().Before(deadline) {
+		n, err := m.port.Read(b)
+		if err != nil {
+			return "", err
+		}
+		if n == 0 {
+			continue // poll interval elapsed, keep waiting
+		}
+		if b[0] == '\n' {
+			return strings.TrimSpace(string(buf)), nil
+		}
+		if b[0] != '\r' {
+			buf = append(buf, b[0])
+		}
+	}
+	return "", fmt.Errorf("read timeout")
+}
+
+// drain discards any bytes already waiting in the modem's buffer.
 func (m *Modem) drain() {
+	_ = m.port.SetReadTimeout(200 * time.Millisecond)
 	buf := make([]byte, 256)
 	for {
 		n, err := m.port.Read(buf)

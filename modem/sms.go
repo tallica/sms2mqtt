@@ -37,17 +37,15 @@ func (m *Modem) SendSMS(to, body string) error {
 	time.Sleep(300 * time.Millisecond)
 
 	// Send body terminated with Ctrl-Z (0x1A)
-	payload := []byte(body)
-	payload = append(payload, 0x1A)
+	payload := append([]byte(body), 0x1A)
 	if err := m.CommandRaw(payload); err != nil {
 		return fmt.Errorf("send body: %w", err)
 	}
 
-	// Read until OK or ERROR (give it extra time)
-	_ = m.port.SetReadTimeout(10 * time.Second)
+	// Read until OK or ERROR — SMS send can take several seconds
+	deadline := time.Now().Add(15 * time.Second)
 	for {
-		line, err := m.reader.ReadString('\n')
-		line = strings.TrimSpace(line)
+		line, err := m.readLine(deadline)
 		if err != nil {
 			return fmt.Errorf("send response: %w", err)
 		}
