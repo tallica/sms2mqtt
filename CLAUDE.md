@@ -27,6 +27,7 @@ macOS cannot run the service directly — the Huawei E3272 requires the Linux `o
 | `main` | `main.go` | Wires modem + MQTT; drives the poll/send select loop |
 | `modem` | `modem/modem.go` | Serial port open, AT command send/receive, drain |
 | `modem` | `modem/sms.go` | `ListSMS`, `DeleteSMS`, `SendSMS`, AT+CMGL parser |
+| `modem` | `modem/pdu.go` | PDU encoding — `buildPDU`, BCD address encoding, UCS-2 body encoding |
 | `mqttclient` | `mqttclient/client.go` | Paho wrapper — LWT, publish inbox, send channel |
 | `config` | `config/config.go` | All config from env vars with defaults |
 
@@ -34,10 +35,10 @@ macOS cannot run the service directly — the Huawei E3272 requires the Linux `o
 
 - **AT port**: `/dev/ttyUSB0` — the AT command interface on the E3272.  
   `/dev/ttyUSB2` is a secondary NDIS port; not used here.
-- **SMS mode**: text mode (`AT+CMGF=1`), GSM charset (`AT+CSCS="GSM"`).
+- **Receive mode**: text mode (`AT+CMGF=1`), GSM charset (`AT+CSCS="GSM"`). Incoming messages are parsed as text.
+- **Send mode**: PDU mode (`AT+CMGF=0`) with UCS-2 encoding. The modem is switched to PDU mode per send and restored to text mode immediately after. Supports emoji and full Unicode.
 - **Push notifications disabled**: `AT+CNMI=0,0,0,0,0` — the service polls instead of reacting to unsolicited result codes.
 - **Delete on read**: messages are deleted from modem storage after successful MQTT publish to avoid re-delivery.
-- **Non-ASCII SMS**: GSM charset drops accented characters. If Polish/UTF-8 support is needed, switch to PDU mode (`AT+CMGF=0`).
 
 ## MQTT topics
 
