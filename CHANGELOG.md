@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-04-30
+
 ### Added
 
 - `FORWARD_TO` env var: when set, received SMS are forwarded to that number in addition to MQTT, formatted as `From: {number}\n{body}`
@@ -35,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - systemd unit file with `dialout` group for serial port access
 - `.env.example` template
 
-[Unreleased]: https://github.com/tallica/sms2mqtt/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/tallica/sms2mqtt/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/tallica/sms2mqtt/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/tallica/sms2mqtt/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/tallica/sms2mqtt/releases/tag/v0.1.0
