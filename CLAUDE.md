@@ -4,19 +4,20 @@
 
 `sms2mqtt` is a Go service that bridges a Huawei E3272s-153 USB modem to Home Assistant via MQTT. It polls the modem for incoming SMS and publishes them to MQTT; it also subscribes to an MQTT topic to send outgoing SMS.
 
-## Build & run
+## Build & deploy
+
+Development is on macOS; the service runs on a remote Linux host over SSH.
 
 ```bash
-go build ./...                        # compile check
-go build -o sms2mqtt .                # local binary
-GOOS=linux GOARCH=amd64 go build -o sms2mqtt .  # cross-compile for Linux/amd64
+go build ./...        # compile check (macOS)
+make deploy           # cross-compile linux/amd64 + scp to $REMOTE:/usr/local/bin/sms2mqtt
+make restart          # ssh remote systemctl restart sms2mqtt
+make logs             # ssh remote journalctl -fu sms2mqtt
 ```
 
-Run locally (copy `.env.example` → `.env`, fill in values, then):
+Set `REMOTE=user@host` in the shell before using `make`. The Makefile targets are: `build-linux`, `deploy`, `start`, `stop`, `restart`, `status`, `logs`.
 
-```bash
-export $(grep -v '^#' .env | xargs) && ./sms2mqtt
-```
+macOS cannot run the service directly — the Huawei E3272 requires the Linux `option` kernel module to expose a serial port.
 
 ## Package layout
 
@@ -65,15 +66,16 @@ Everything else has a default.
 
 ## Deployment
 
-```bash
-sudo cp sms2mqtt /usr/local/bin/
-sudo mkdir -p /etc/sms2mqtt
-sudo cp .env.example /etc/sms2mqtt/env
-# edit /etc/sms2mqtt/env
+First-time service install on the Linux host (run once manually):
 
+```bash
+sudo mkdir -p /etc/sms2mqtt
+sudo cp .env.example /etc/sms2mqtt/env   # then edit with real values
 sudo cp sms2mqtt.service /etc/systemd/system/
-sudo systemctl enable --now sms2mqtt
-sudo journalctl -fu sms2mqtt
+sudo systemctl daemon-reload
+sudo systemctl enable sms2mqtt
 ```
+
+Subsequent deploys from macOS: `make deploy && make restart && make logs`.
 
 The systemd unit runs as the `homeassistant` user with the `dialout` supplementary group for serial port access.

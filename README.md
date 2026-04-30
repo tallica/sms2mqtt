@@ -12,15 +12,27 @@ Bridge between a Huawei E3272s-153 USB modem and Home Assistant via MQTT.
 - MQTT broker (e.g. Mosquitto bundled with Home Assistant)
 - Go 1.21+ (build only)
 
-## Build
+## Build & deploy
+
+The service runs on Linux. Development from macOS uses cross-compilation and `make` to deploy over SSH.
 
 ```bash
-# Local
-go build -o sms2mqtt .
+# Compile check
+go build ./...
 
-# Cross-compile for Linux/amd64 (e.g. from macOS)
-GOOS=linux GOARCH=amd64 go build -o sms2mqtt .
+# Cross-compile and deploy to remote Linux host
+export REMOTE=user@your-linux-box
+make deploy       # builds linux/amd64 binary, scps it to $REMOTE:/usr/local/bin/sms2mqtt
+
+# Service control
+make start
+make restart
+make stop
+make status
+make logs         # tails journalctl -fu sms2mqtt on the remote
 ```
+
+macOS note: the Huawei E3272 requires Linux kernel drivers (`option` module) to appear as a serial port. It will not expose a `cu.*` device on macOS, so the modem must be connected to the Linux host.
 
 ## Configuration
 
@@ -55,15 +67,23 @@ Copy `.env.example` and fill in your values.
 
 ## Deploy as a systemd service
 
-```bash
-sudo cp sms2mqtt /usr/local/bin/
-sudo mkdir -p /etc/sms2mqtt
-sudo cp .env.example /etc/sms2mqtt/env
-# edit /etc/sms2mqtt/env with real values
+First-time setup on the Linux host:
 
-sudo cp sms2mqtt.service /etc/systemd/system/
-sudo systemctl enable --now sms2mqtt
-sudo journalctl -fu sms2mqtt
+```bash
+# Copy and edit config
+sudo mkdir -p /etc/sms2mqtt
+scp .env.example user@host:/tmp/env
+ssh user@host "sudo mv /tmp/env /etc/sms2mqtt/env && sudo nano /etc/sms2mqtt/env"
+
+# Install service
+scp sms2mqtt.service user@host:/tmp/
+ssh user@host "sudo mv /tmp/sms2mqtt.service /etc/systemd/system/ \
+  && sudo systemctl daemon-reload \
+  && sudo systemctl enable sms2mqtt"
+
+# Deploy binary and start
+export REMOTE=user@host
+make deploy && make start && make logs
 ```
 
 The unit runs as the `homeassistant` user with the `dialout` group for serial port access. Adjust `User=` in `sms2mqtt.service` if your setup differs.
