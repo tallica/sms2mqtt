@@ -2,6 +2,7 @@ package modem
 
 import (
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
@@ -36,17 +37,23 @@ func (m *Modem) Close() error {
 
 // init puts the modem into a known state.
 func (m *Modem) init() error {
-	for _, cmd := range []string{
+	required := []string{
 		"ATZ",               // reset
 		"ATE0",              // echo off
 		"AT+CMGF=1",        // SMS text mode
-		`AT+CSCS="GSM"`,    // GSM character set
 		"AT+CNMI=0,0,0,0,0", // disable SMS push notifications (we poll)
-	} {
+	}
+	for _, cmd := range required {
 		if _, err := m.Command(cmd); err != nil {
 			return fmt.Errorf("init command %q: %w", cmd, err)
 		}
 	}
+
+	// Optional: some modems don't support AT+CSCS
+	if _, err := m.Command(`AT+CSCS="GSM"`); err != nil {
+		log.Printf("warning: AT+CSCS not supported, using modem default charset: %v", err)
+	}
+
 	return nil
 }
 
@@ -66,17 +73,15 @@ func (m *Modem) Command(cmd string) ([]string, error) {
 		if line == "" || line == cmd {
 			continue // skip blank lines and echo
 		}
-		switch line {
-		case "OK":
+		switch {
+		case line == "OK":
 			return lines, nil
-		case "ERROR", "NO CARRIER":
-			return nil, fmt.Errorf("modem error for %q: %s", cmd, line)
+		case line == "ERROR", line == "NO CARRIER",
+			strings.HasPrefix(line, "+CME ERROR"),
+			strings.HasPrefix(line, "+CMS ERROR"):
+			return nil, fmt.Errorf("%s", line)
 		default:
-			if !strings.HasPrefix(line, "+CMS ERROR") {
-				lines = append(lines, line)
-			} else {
-				return nil, fmt.Errorf("modem error for %q: %s", cmd, line)
-			}
+			lines = append(lines, line)
 		}
 	}
 }
