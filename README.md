@@ -3,8 +3,13 @@
 Bridge between a Huawei E3272s-153 USB modem and Home Assistant via MQTT.
 
 - Polls the modem for incoming SMS and publishes them to `sms2mqtt/inbox`
-- Subscribes to `sms2mqtt/send` to send outgoing SMS
+- Subscribes to `sms2mqtt/send` to send outgoing SMS (full Unicode / emoji support)
 - Publishes `online`/`offline` to `sms2mqtt/status` (retained Last Will)
+- Forwards incoming SMS to a phone number (`FORWARD_TO`)
+- Built-in bot commands: `ping`, `version`, `status`
+
+> **⚠️ AI-assisted project**  
+> This codebase was built with [Claude Code](https://claude.ai/code). It works for the author's specific setup but has not been independently audited. Review the code before running it in any security-sensitive or production environment.
 
 ## Requirements
 
@@ -71,71 +76,87 @@ Copy `.env.example` and fill in your values.
 
 **Send SMS** (publish to `sms2mqtt/send`):
 ```json
-{"to": "+48123456789", "body": "Hello back"}
+{"to": "+48123456789", "body": "Hello back 👋"}
 ```
+
+## Bot commands
+
+Send these as an SMS to the modem's number:
+
+| Command | Reply |
+|---|---|
+| `ping` | `pong` |
+| `version` | `sms2mqtt v0.5.1` |
+| `status` | `sms2mqtt v0.5.1 \| up 2h30m \| signal -65 dBm` |
+
+Bot-handled messages are never forwarded via `FORWARD_TO`.
 
 ## Deploy as a systemd service
 
 First-time setup on the Linux host:
 
 ```bash
+# Create dedicated user
+sudo useradd -r -s /usr/sbin/nologin sms2mqtt
+sudo usermod -aG dialout sms2mqtt
+
 # Copy and edit config
 sudo mkdir -p /etc/sms2mqtt
-scp .env.example user@host:/tmp/env
-ssh user@host "sudo mv /tmp/env /etc/sms2mqtt/env && sudo nano /etc/sms2mqtt/env"
+sudo cp .env.example /etc/sms2mqtt/env
+sudo nano /etc/sms2mqtt/env
 
 # Install service
-scp sms2mqtt.service user@host:/tmp/
-ssh user@host "sudo mv /tmp/sms2mqtt.service /etc/systemd/system/ \
-  && sudo systemctl daemon-reload \
-  && sudo systemctl enable sms2mqtt"
+sudo cp sms2mqtt.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable sms2mqtt
 
 # Deploy binary and start
 export REMOTE=user@host
 make deploy && make start && make logs
 ```
 
-The unit runs as the `homeassistant` user with the `dialout` group for serial port access. Adjust `User=` in `sms2mqtt.service` if your setup differs.
-
 ## Home Assistant integration
 
-Add to `configuration.yaml`:
+### Sending SMS
+
+```yaml
+notify_sms_michal:
+  alias: "Send SMS to Michal"
+  fields:
+    message:
+      description: "The message content"
+  sequence:
+  - action: mqtt.publish
+    data:
+      topic: sms2mqtt/send
+      payload: "{{ {'to': states('sensor.michal_phone_number'), 'body': message} | to_json }}"
+  mode: queued
+  max: 3
+```
+
+### Status and incoming SMS sensors
 
 ```yaml
 mqtt:
+  binary_sensor:
+    - name: "sms2mqtt"
+      state_topic: sms2mqtt/status
+      payload_on: online
+      payload_off: offline
+      device_class: connectivity
+
   sensor:
     - name: "Last SMS"
-      state_topic: "sms2mqtt/inbox"
+      state_topic: sms2mqtt/inbox
       value_template: "{{ value_json.from }}"
-      json_attributes_topic: "sms2mqtt/inbox"
-
-  binary_sensor:
-    - name: "SMS Bridge"
-      state_topic: "sms2mqtt/status"
-      payload_on: "online"
-      payload_off: "offline"
-      device_class: connectivity
-```
-
-Example automation — reply to a "STATUS" SMS:
-
-```yaml
-automation:
-  - alias: "SMS status reply"
-    trigger:
-      platform: mqtt
-      topic: sms2mqtt/inbox
-    condition:
-      condition: template
-      value_template: "{{ trigger.payload_json.body | upper == 'STATUS' }}"
-    action:
-      service: mqtt.publish
-      data:
-        topic: sms2mqtt/send
-        payload_template: >
-          {"to": "{{ trigger.payload_json.from }}", "body": "All systems OK"}
+      json_attributes_topic: sms2mqtt/inbox
+      json_attributes_template: "{{ value_json | to_json }}"
 ```
 
 ## Changelog
 
 See [CHANGELOG.md](CHANGELOG.md).
+
+---
+
+🤖 Built with [Claude Code](https://claude.ai/code)
