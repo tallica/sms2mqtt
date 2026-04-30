@@ -136,6 +136,8 @@ Gives `sensor.last_sms` with `from`, `body`, and `time` attributes. Use an MQTT 
 First-time service install on the Linux host (run once manually):
 
 ```bash
+sudo useradd -r -s /usr/sbin/nologin sms2mqtt
+sudo usermod -aG dialout sms2mqtt
 sudo mkdir -p /etc/sms2mqtt
 sudo cp .env.example /etc/sms2mqtt/env   # then edit with real values
 sudo cp sms2mqtt.service /etc/systemd/system/
@@ -145,4 +147,4 @@ sudo systemctl enable sms2mqtt
 
 Subsequent deploys from macOS: `make deploy && make restart && make logs`.
 
-The systemd unit runs as the `homeassistant` user with the `dialout` supplementary group for serial port access.
+The systemd unit runs as the `sms2mqtt` system user with the `dialout` supplementary group for serial port access.
