@@ -129,7 +129,7 @@ notify_sms_michal:
   - action: mqtt.publish
     data:
       topic: sms2mqtt/send
-      payload: "{{ {'to': states('sensor.michal_phone_number'), 'body': message} | to_json }}"
+      payload: "{{ {'to': states('sensor.your_phone_number'), 'body': message} | to_json }}"
   mode: queued
   max: 3
 ```
