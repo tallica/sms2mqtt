@@ -66,10 +66,10 @@ func Status(
 				parts = append(parts, op)
 			}
 			if net, err := network(); err == nil {
-				parts = append(parts, "net "+net)
+				parts = append(parts, "network: "+net)
 			}
 			if s, err := sim(); err == nil {
-				parts = append(parts, "sim "+s)
+				parts = append(parts, "sim: "+s)
 			}
 			return strings.Join(parts, " | ")
 		},

@@ -71,7 +71,7 @@ Notable optional vars:
 |---|---|---|
 | `ping` | `pong` (reply to sender) | Case-sensitive, exact match. Not forwarded via `FORWARD_TO`. |
 | `version` | `sms2mqtt <version>` | Reports the running binary version. Not forwarded via `FORWARD_TO`. |
-| `status` | `sms2mqtt <ver> \| up Xh Ym \| -Z dBm \| <operator> \| net <registered\|roaming\|searching\|denied\|not_registered\|unknown> \| sim <ready\|absent\|pin_required\|puk_required\|error>` | Reports version, uptime, signal, operator, network, and SIM. Sent as multipart SMS if needed. Not forwarded. |
+| `status` | `sms2mqtt <ver> \| up Xh Ym \| -Z dBm \| <operator> \| network: <registered\|roaming\|searching\|denied\|not_registered\|unknown> \| sim: <ready\|absent\|pin_required\|puk_required\|error>` | Reports version, uptime, signal, operator, network, and SIM. Sent as multipart SMS if needed. Not forwarded. |
 
 Bot-handled messages are never forwarded. Add new commands in `bot/bot.go`.
 
