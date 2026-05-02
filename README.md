@@ -5,6 +5,7 @@ Bridge between a Huawei E3272s-153 USB modem and Home Assistant via MQTT.
 - Polls the modem for incoming SMS and publishes them to `sms2mqtt/inbox`
 - Subscribes to `sms2mqtt/send` to send outgoing SMS (full Unicode / emoji support)
 - Publishes `online`/`offline` to `sms2mqtt/status` (retained Last Will)
+- Publishes modem telemetry to `sms2mqtt/modem` each poll cycle (status, network, SIM, signal)
 - Forwards incoming SMS to a phone number (`FORWARD_TO`)
 - Built-in bot commands: `ping`, `version`, `status`
 
@@ -63,6 +64,7 @@ All configuration is via environment variables:
 | `MQTT_TOPIC_INBOX` | `sms2mqtt/inbox` | Topic for received SMS |
 | `MQTT_TOPIC_SEND` | `sms2mqtt/send` | Topic to trigger outgoing SMS |
 | `MQTT_TOPIC_STATUS` | `sms2mqtt/status` | LWT topic |
+| `MQTT_TOPIC_MODEM` | `sms2mqtt/modem` | Modem telemetry topic |
 | `FORWARD_TO` | _(none)_ | Phone number to forward received SMS to |
 
 Copy `.env.example` and fill in your values.
@@ -79,6 +81,19 @@ Copy `.env.example` and fill in your values.
 {"to": "+48123456789", "body": "Hello back 👋"}
 ```
 
+**Modem telemetry** (`sms2mqtt/modem`, retained, published each poll cycle):
+```json
+{"status": "ready", "network": "registered", "sim": "ready", "signal_dbm": -67, "signal_level": "good"}
+```
+
+| Field | Values |
+|---|---|
+| `status` | `initializing` `ready` `degraded` `offline` `no_sim` `sim_locked` `error` |
+| `network` | `registered` `roaming` `searching` `denied` `not_registered` `unknown` |
+| `sim` | `ready` `absent` `pin_required` `puk_required` `error` |
+| `signal_level` | `none` `poor` `fair` `good` `excellent` |
+| `signal_dbm` | integer dBm, omitted when no signal |
+
 ## Bot commands
 
 Send these as an SMS to the modem's number:
@@ -87,7 +102,7 @@ Send these as an SMS to the modem's number:
 |---|---|
 | `ping` | `pong` |
 | `version` | `sms2mqtt v0.5.1` |
-| `status` | `sms2mqtt v0.5.1 \| up 2h30m \| signal -65 dBm` |
+| `status` | `sms2mqtt v0.5.1 \| up 1d2h30m \| signal -65 dBm` |
 
 Bot-handled messages are never forwarded via `FORWARD_TO`.
 
@@ -151,6 +166,19 @@ mqtt:
       value_template: "{{ value_json.from }}"
       json_attributes_topic: sms2mqtt/inbox
       json_attributes_template: "{{ value_json | to_json }}"
+
+    - name: "Modem status"
+      state_topic: sms2mqtt/modem
+      value_template: "{{ value_json.status }}"
+      json_attributes_topic: sms2mqtt/modem
+      json_attributes_template: "{{ value_json | to_json }}"
+
+    - name: "Modem signal"
+      state_topic: sms2mqtt/modem
+      value_template: "{{ value_json.signal_dbm }}"
+      unit_of_measurement: "dBm"
+      device_class: signal_strength
+      state_class: measurement
 ```
 
 ## Changelog
