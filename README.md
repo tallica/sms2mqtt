@@ -102,7 +102,7 @@ Send these as an SMS to the modem's number:
 |---|---|
 | `ping` | `pong` |
 | `version` | `sms2mqtt v0.5.1` |
-| `status` | `sms2mqtt v0.5.1 \| up 1d2h30m \| signal -65 dBm \| net registered \| sim ready` |
+| `status` | `sms2mqtt v0.5.1 \| up 1d2h30m \| -65 dBm \| net home \| sim ok` |
 
 Bot-handled messages are never forwarded via `FORWARD_TO`.
 
