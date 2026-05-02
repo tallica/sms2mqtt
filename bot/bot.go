@@ -66,41 +66,13 @@ func Status(
 				parts = append(parts, op)
 			}
 			if net, err := network(); err == nil {
-				parts = append(parts, "net "+fmtNetwork(net))
+				parts = append(parts, "net "+net)
 			}
 			if s, err := sim(); err == nil {
-				parts = append(parts, "sim "+fmtSIM(s))
+				parts = append(parts, "sim "+s)
 			}
 			return strings.Join(parts, " | ")
 		},
-	}
-}
-
-func fmtNetwork(s string) string {
-	switch s {
-	case "registered":
-		return "home"
-	case "roaming":
-		return "roam"
-	case "searching":
-		return "search"
-	case "not_registered":
-		return "no net"
-	default:
-		return s
-	}
-}
-
-func fmtSIM(s string) string {
-	switch s {
-	case "ready":
-		return "ok"
-	case "pin_required":
-		return "PIN?"
-	case "puk_required":
-		return "PUK!"
-	default:
-		return s
 	}
 }
 
