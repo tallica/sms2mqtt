@@ -49,7 +49,7 @@ macOS cannot run the service directly — the Huawei E3272 requires the Linux `o
 | `sms2mqtt/inbox` | modem → HA | `{"from":"+48...","body":"...","time":"RFC3339"}` |
 | `sms2mqtt/send` | HA → modem | `{"to":"+48...","body":"..."}` |
 | `sms2mqtt/status` | modem → HA | `"online"` / `"offline"` (retained LWT) |
-| `sms2mqtt/modem` | modem → HA | `{"status":"ready","network":"registered","sim":"ready","signal_dbm":-67,"signal_level":"good"}` (retained, each poll) |
+| `sms2mqtt/modem` | modem → HA | `{"status":"ready","network":"registered","sim":"ready","signal_dbm":-67,"signal_level":"good"}` (retained, each poll; `{"status":"offline"}` on shutdown) |
 
 All topics are overridable via env vars (`MQTT_TOPIC_INBOX`, etc.).
 

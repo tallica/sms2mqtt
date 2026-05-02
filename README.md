@@ -81,10 +81,12 @@ Copy `.env.example` and fill in your values.
 {"to": "+48123456789", "body": "Hello back 👋"}
 ```
 
-**Modem telemetry** (`sms2mqtt/modem`, retained, published each poll cycle):
+**Modem telemetry** (`sms2mqtt/modem`, retained):
 ```json
 {"status": "ready", "network": "registered", "sim": "ready", "signal_dbm": -67, "signal_level": "good"}
 ```
+
+Published each poll cycle. On clean shutdown, replaced with `{"status":"offline"}` — network, SIM, and signal fields are cleared from the broker's retained value.
 
 | Field | Values |
 |---|---|

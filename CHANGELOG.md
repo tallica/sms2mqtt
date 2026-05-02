@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- `sms2mqtt/modem` is updated to `{"status":"offline"}` on clean shutdown, clearing network, SIM, and signal fields from the broker's retained value
+
 ## [0.6.0] - 2026-05-02
 
 ### Added
