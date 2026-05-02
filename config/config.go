@@ -26,6 +26,7 @@ type MQTTConfig struct {
 	TopicInbox  string // publish received SMS here
 	TopicSend   string // subscribe for outgoing SMS
 	TopicStatus string // LWT topic
+	TopicModem  string // publish modem state each poll cycle
 }
 
 func Load() (*Config, error) {
@@ -43,6 +44,7 @@ func Load() (*Config, error) {
 			TopicInbox:  env("MQTT_TOPIC_INBOX", "sms2mqtt/inbox"),
 			TopicSend:   env("MQTT_TOPIC_SEND", "sms2mqtt/send"),
 			TopicStatus: env("MQTT_TOPIC_STATUS", "sms2mqtt/status"),
+			TopicModem:  env("MQTT_TOPIC_MODEM", "sms2mqtt/modem"),
 		},
 	}
 

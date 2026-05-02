@@ -28,6 +28,14 @@ type InboxMessage struct {
 	Time string `json:"time"`
 }
 
+type ModemMessage struct {
+	Status      string `json:"status"`
+	Network     string `json:"network,omitempty"`
+	SIM         string `json:"sim,omitempty"`
+	SignalDBm   *int   `json:"signal_dbm,omitempty"`
+	SignalLevel string `json:"signal_level,omitempty"`
+}
+
 func New(cfg config.MQTTConfig) (*Client, error) {
 	opts := paho.NewClientOptions().
 		AddBroker(cfg.Broker).
@@ -92,6 +100,16 @@ func (c *Client) PublishInbox(msg InboxMessage) {
 	}
 	c.publish(c.cfg.TopicInbox, string(payload), false)
 	log.Info().Str("from", msg.From).Msg("published SMS to MQTT")
+}
+
+// PublishModem publishes modem state to the modem topic (retained).
+func (c *Client) PublishModem(msg ModemMessage) {
+	payload, err := json.Marshal(msg)
+	if err != nil {
+		log.Error().Err(err).Msg("marshal modem message")
+		return
+	}
+	c.publish(c.cfg.TopicModem, string(payload), true)
 }
 
 func (c *Client) publish(topic, payload string, retain bool) {

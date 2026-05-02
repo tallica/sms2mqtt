@@ -65,11 +65,14 @@ func main() {
 		log.Info().Str("to", cfg.ForwardTo).Msg("SMS forwarding enabled")
 	}
 
+	mqtt.PublishModem(mqttclient.ModemMessage{Status: "initializing"})
+
 	log.Info().Int("interval_s", cfg.Modem.PollSeconds).Msg("polling started")
 
 	for {
 		select {
 		case <-ticker.C:
+			pollModem(m, mqtt)
 			pollSMS(m, mqtt, b, cfg.ForwardTo)
 
 		case req := <-mqtt.SendRequests():
@@ -84,6 +87,59 @@ func main() {
 			log.Info().Str("signal", sig.String()).Msg("shutting down")
 			return
 		}
+	}
+}
+
+func pollModem(m *modem.Modem, mqtt *mqttclient.Client) {
+	sim, err := m.SIMStatus()
+	if err != nil {
+		log.Error().Err(err).Msg("SIM status check failed")
+		sim = "error"
+	}
+
+	network, err := m.NetworkRegistration()
+	if err != nil {
+		log.Error().Err(err).Msg("network registration check failed")
+		network = "unknown"
+	}
+
+	msg := mqttclient.ModemMessage{
+		SIM:     sim,
+		Network: network,
+	}
+
+	if dbm, ok, err := m.SignalStrength(); err == nil {
+		if ok {
+			msg.SignalDBm = &dbm
+			msg.SignalLevel = modem.SignalLevel(dbm)
+		} else {
+			msg.SignalLevel = "none"
+		}
+	}
+
+	msg.Status = deriveModemStatus(sim, network, msg.SignalDBm != nil)
+	mqtt.PublishModem(msg)
+}
+
+func deriveModemStatus(sim, network string, hasSignal bool) string {
+	switch sim {
+	case "absent":
+		return "no_sim"
+	case "pin_required", "puk_required":
+		return "sim_locked"
+	case "error":
+		return "error"
+	}
+	switch network {
+	case "registered", "roaming":
+		if !hasSignal {
+			return "degraded"
+		}
+		return "ready"
+	case "searching", "not_registered", "denied":
+		return "offline"
+	default:
+		return "error"
 	}
 }
 

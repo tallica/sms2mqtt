@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `sms2mqtt/modem` topic published each poll cycle with `status`, `network`, `sim`, `signal_dbm`, and `signal_level` fields; `status` values: `initializing`, `ready`, `degraded`, `offline`, `no_sim`, `sim_locked`, `error`
+
+### Changed
+
+- Uptime in `status` SMS command now includes days (e.g. `1d8h23m`)
+
 ## [0.5.2] - 2026-05-01
 
 ### Added
