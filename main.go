@@ -58,6 +58,8 @@ func main() {
 			version,
 			func() time.Duration { return time.Since(startTime) },
 			m.SignalStrength,
+			m.NetworkRegistration,
+			m.SIMStatus,
 		),
 	)
 

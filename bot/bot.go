@@ -45,9 +45,14 @@ func Version(version string) Command {
 	}
 }
 
-// Status reports version, uptime, and signal strength.
-// signal returns (dBm, ok, err) — ok=false means no signal, err is ignored.
-func Status(version string, uptime func() time.Duration, signal func() (int, bool, error)) Command {
+// Status reports version, uptime, signal, network registration, and SIM state.
+func Status(
+	version string,
+	uptime func() time.Duration,
+	signal func() (int, bool, error),
+	network func() (string, error),
+	sim func() (string, error),
+) Command {
 	return Command{
 		Match: func(body string) bool { return body == "status" },
 		Handle: func(_, _ string) string {
@@ -56,7 +61,13 @@ func Status(version string, uptime func() time.Duration, signal func() (int, boo
 			if dbm, ok, _ := signal(); ok {
 				parts = append(parts, fmt.Sprintf("signal %d dBm", dbm))
 			} else {
-				parts = append(parts, "signal unknown")
+				parts = append(parts, "signal none")
+			}
+			if net, err := network(); err == nil {
+				parts = append(parts, "net "+net)
+			}
+			if s, err := sim(); err == nil {
+				parts = append(parts, "sim "+s)
 			}
 			return strings.Join(parts, " | ")
 		},
