@@ -228,7 +228,7 @@ mqtt:
         identifiers: ["sms2mqtt"]
 
   binary_sensor:
-    - name: "SMS Bridge"
+    - name: "Bridge"
       unique_id: sms2mqtt_bridge
       state_topic: sms2mqtt/status
       payload_on: online
