@@ -164,36 +164,71 @@ notify_sms_michal:
   max: 3
 ```
 
-### Status and incoming SMS sensors
+### Sensors and device
+
+All entities are grouped under a single **GSM Modem** device by sharing the same `identifiers`:
 
 ```yaml
 mqtt:
+  sensor:
+    - name: "Status"
+      unique_id: sms2mqtt_modem_status
+      state_topic: sms2mqtt/modem
+      value_template: "{{ value_json.status }}"
+      device:
+        identifiers: ["sms2mqtt"]
+        name: "GSM Modem"
+        model: "Huawei E3272s-153"
+        manufacturer: "Huawei"
+
+    - name: "Network"
+      unique_id: sms2mqtt_modem_network
+      state_topic: sms2mqtt/modem
+      value_template: "{{ value_json.network }}"
+      device:
+        identifiers: ["sms2mqtt"]
+
+    - name: "SIM"
+      unique_id: sms2mqtt_modem_sim
+      state_topic: sms2mqtt/modem
+      value_template: "{{ value_json.sim }}"
+      device:
+        identifiers: ["sms2mqtt"]
+
+    - name: "Signal"
+      unique_id: sms2mqtt_modem_signal_dbm
+      state_topic: sms2mqtt/modem
+      value_template: "{{ value_json.signal_dbm | int(0) }}"
+      unit_of_measurement: "dBm"
+      device_class: signal_strength
+      state_class: measurement
+      device:
+        identifiers: ["sms2mqtt"]
+
+    - name: "Signal level"
+      unique_id: sms2mqtt_modem_signal_level
+      state_topic: sms2mqtt/modem
+      value_template: "{{ value_json.signal_level }}"
+      device:
+        identifiers: ["sms2mqtt"]
+
+    - name: "Last SMS"
+      unique_id: sms2mqtt_last_sms
+      state_topic: sms2mqtt/inbox
+      value_template: "{{ value_json.from }}"
+      json_attributes_topic: sms2mqtt/inbox
+      device:
+        identifiers: ["sms2mqtt"]
+
   binary_sensor:
-    - name: "sms2mqtt"
+    - name: "SMS Bridge"
+      unique_id: sms2mqtt_bridge
       state_topic: sms2mqtt/status
       payload_on: online
       payload_off: offline
       device_class: connectivity
-
-  sensor:
-    - name: "Last SMS"
-      state_topic: sms2mqtt/inbox
-      value_template: "{{ value_json.from }}"
-      json_attributes_topic: sms2mqtt/inbox
-      json_attributes_template: "{{ value_json | to_json }}"
-
-    - name: "Modem status"
-      state_topic: sms2mqtt/modem
-      value_template: "{{ value_json.status }}"
-      json_attributes_topic: sms2mqtt/modem
-      json_attributes_template: "{{ value_json | to_json }}"
-
-    - name: "Modem signal"
-      state_topic: sms2mqtt/modem
-      value_template: "{{ value_json.signal_dbm }}"
-      unit_of_measurement: "dBm"
-      device_class: signal_strength
-      state_class: measurement
+      device:
+        identifiers: ["sms2mqtt"]
 ```
 
 ## Changelog
