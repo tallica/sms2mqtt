@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-05-02
+
 ### Added
 
 - `sms2mqtt/modem` topic published each poll cycle with `status`, `network`, `sim`, `signal_dbm`, and `signal_level` fields; `status` values: `initializing`, `ready`, `degraded`, `offline`, `no_sim`, `sim_locked`, `error`
@@ -14,6 +16,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Uptime in `status` SMS command now includes days (e.g. `1d8h23m`)
+- `status` SMS reply enriched with network registration and SIM state; labels abbreviated to fit the 70-char UCS-2 single-SMS limit (e.g. `net home | sim ok`)
+
+### Fixed
+
+- `make deploy` now stops the service before copying the binary so the running executable is not replaced while in use
 
 ## [0.5.2] - 2026-05-01
 
@@ -104,7 +111,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - systemd unit file with `dialout` group for serial port access
 - `.env.example` template
 
-[Unreleased]: https://github.com/tallica/sms2mqtt/compare/v0.5.2...HEAD
+[Unreleased]: https://github.com/tallica/sms2mqtt/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/tallica/sms2mqtt/compare/v0.5.2...v0.6.0
 [0.5.2]: https://github.com/tallica/sms2mqtt/compare/v0.5.1...v0.5.2
 [0.5.1]: https://github.com/tallica/sms2mqtt/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/tallica/sms2mqtt/compare/v0.4.1...v0.5.0
