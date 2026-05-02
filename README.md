@@ -176,7 +176,7 @@ mqtt:
     - name: "Status"
       unique_id: sms2mqtt_modem_status
       state_topic: sms2mqtt/modem
-      value_template: "{{ value_json.status }}"
+      value_template: "{{ value_json.status | replace('_', ' ') | capitalize }}"
       availability_topic: sms2mqtt/status
       device:
         identifiers: ["sms2mqtt"]
@@ -187,7 +187,7 @@ mqtt:
     - name: "Network"
       unique_id: sms2mqtt_modem_network
       state_topic: sms2mqtt/modem
-      value_template: "{{ value_json.network }}"
+      value_template: "{{ value_json.network | replace('_', ' ') | capitalize }}"
       availability_topic: sms2mqtt/status
       device:
         identifiers: ["sms2mqtt"]
@@ -195,7 +195,7 @@ mqtt:
     - name: "SIM"
       unique_id: sms2mqtt_modem_sim
       state_topic: sms2mqtt/modem
-      value_template: "{{ value_json.sim }}"
+      value_template: "{{ value_json.sim | replace('_', ' ') | capitalize }}"
       availability_topic: sms2mqtt/status
       device:
         identifiers: ["sms2mqtt"]
@@ -214,7 +214,7 @@ mqtt:
     - name: "Signal level"
       unique_id: sms2mqtt_modem_signal_level
       state_topic: sms2mqtt/modem
-      value_template: "{{ value_json.signal_level }}"
+      value_template: "{{ value_json.signal_level | capitalize }}"
       availability_topic: sms2mqtt/status
       device:
         identifiers: ["sms2mqtt"]
