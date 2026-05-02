@@ -68,8 +68,12 @@ func fmtDuration(d time.Duration) string {
 		return fmt.Sprintf("%ds", int(d.Seconds()))
 	}
 	d = d.Round(time.Minute)
-	h := int(d.Hours())
+	days := int(d.Hours()) / 24
+	h := int(d.Hours()) % 24
 	m := int(d.Minutes()) % 60
+	if days > 0 {
+		return fmt.Sprintf("%dd%dh%dm", days, h, m)
+	}
 	if h > 0 {
 		return fmt.Sprintf("%dh%dm", h, m)
 	}
