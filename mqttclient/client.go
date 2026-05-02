@@ -121,5 +121,6 @@ func (c *Client) publish(topic, payload string, retain bool) {
 
 func (c *Client) Disconnect() {
 	c.publish(c.cfg.TopicStatus, "offline", true)
+	c.PublishModem(ModemMessage{Status: "offline"})
 	c.c.Disconnect(500)
 }
