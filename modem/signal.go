@@ -71,6 +71,25 @@ func (m *Modem) NetworkRegistration() (string, error) {
 	return "unknown", fmt.Errorf("+CREG response missing")
 }
 
+// Operator queries AT+COPS? and returns the registered operator name.
+// Returns an empty string when the modem is not registered on any network.
+func (m *Modem) Operator() (string, error) {
+	lines, err := m.Command("AT+COPS?")
+	if err != nil {
+		return "", err
+	}
+	for _, line := range lines {
+		if strings.HasPrefix(line, "+COPS:") {
+			fields := strings.SplitN(strings.TrimSpace(strings.TrimPrefix(line, "+COPS:")), ",", 4)
+			if len(fields) >= 3 {
+				return strings.Trim(fields[2], `"`), nil
+			}
+			return "", nil // not registered — no operator field
+		}
+	}
+	return "", fmt.Errorf("+COPS response missing")
+}
+
 // SIMStatus queries AT+CPIN? and returns the SIM state.
 func (m *Modem) SIMStatus() (string, error) {
 	lines, err := m.Command("AT+CPIN?")

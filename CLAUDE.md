@@ -28,8 +28,8 @@ macOS cannot run the service directly — the Huawei E3272 requires the Linux `o
 | `bot` | `bot/bot.go` | Command dispatch — `Bot`, built-in `Ping()` and `Status()` commands |
 | `modem` | `modem/modem.go` | Serial port open, AT command send/receive, drain |
 | `modem` | `modem/sms.go` | `ListSMS`, `DeleteSMS`, `SendSMS`, AT+CMGL parser |
-| `modem` | `modem/pdu.go` | PDU encoding — `buildPDU`, BCD address encoding, UCS-2 body encoding |
-| `modem` | `modem/signal.go` | `SignalStrength` — queries `AT+CSQ`, returns dBm |
+| `modem` | `modem/pdu.go` | PDU encoding — `buildPDUs` (multipart), BCD address encoding, UCS-2 body encoding |
+| `modem` | `modem/signal.go` | `SignalStrength`, `SignalLevel`, `NetworkRegistration`, `SIMStatus`, `Operator` |
 | `mqttclient` | `mqttclient/client.go` | Paho wrapper — LWT, publish inbox, send channel |
 | `config` | `config/config.go` | All config from env vars with defaults |
 
@@ -49,7 +49,7 @@ macOS cannot run the service directly — the Huawei E3272 requires the Linux `o
 | `sms2mqtt/inbox` | modem → HA | `{"from":"+48...","body":"...","time":"RFC3339"}` |
 | `sms2mqtt/send` | HA → modem | `{"to":"+48...","body":"..."}` |
 | `sms2mqtt/status` | modem → HA | `"online"` / `"offline"` (retained LWT) |
-| `sms2mqtt/modem` | modem → HA | `{"status":"ready","network":"registered","sim":"ready","signal_dbm":-67,"signal_level":"good"}` (retained, each poll; `{"status":"offline"}` on shutdown) |
+| `sms2mqtt/modem` | modem → HA | `{"status":"ready","network":"registered","sim":"ready","signal_dbm":-67,"signal_level":"good","operator":"Orange PL","roaming":false}` (retained, each poll; `{"status":"offline"}` on shutdown) |
 
 All topics are overridable via env vars (`MQTT_TOPIC_INBOX`, etc.).
 
@@ -71,7 +71,7 @@ Notable optional vars:
 |---|---|---|
 | `ping` | `pong` (reply to sender) | Case-sensitive, exact match. Not forwarded via `FORWARD_TO`. |
 | `version` | `sms2mqtt <version>` | Reports the running binary version. Not forwarded via `FORWARD_TO`. |
-| `status` | `sms2mqtt <ver> \| up Xh Ym \| -Z dBm \| net <home\|roam\|search\|denied\|no net\|?> \| sim <ok\|absent\|PIN?\|PUK!\|error>` | Reports version, uptime, signal, network, and SIM. Abbreviated to fit 70-char UCS-2 limit. Not forwarded. |
+| `status` | `sms2mqtt <ver> \| up Xh Ym \| -Z dBm \| <operator> \| net <home\|roam\|search\|denied\|no net\|?> \| sim <ok\|absent\|PIN?\|PUK!\|error>` | Reports version, uptime, signal, operator, network, and SIM. Sent as multipart SMS if needed. Not forwarded. |
 
 Bot-handled messages are never forwarded. Add new commands in `bot/bot.go`.
 

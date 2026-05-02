@@ -34,6 +34,8 @@ type ModemMessage struct {
 	SIM         string `json:"sim,omitempty"`
 	SignalDBm   *int   `json:"signal_dbm,omitempty"`
 	SignalLevel string `json:"signal_level,omitempty"`
+	Operator    string `json:"operator,omitempty"`
+	Roaming     *bool  `json:"roaming,omitempty"`
 }
 
 func New(cfg config.MQTTConfig) (*Client, error) {

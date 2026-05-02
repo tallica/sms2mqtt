@@ -30,10 +30,11 @@ func (m *Modem) DeleteSMS(index int) error {
 	return err
 }
 
-// SendSMS sends a message to the given number using PDU mode with UCS-2 encoding,
-// which supports the full Unicode range including emoji. Text mode is restored afterwards.
+// SendSMS sends a message using PDU mode with UCS-2 encoding. Messages longer than
+// 70 UCS-2 characters are split into concatenated multipart SMS automatically.
+// Text mode is restored after all parts are sent.
 func (m *Modem) SendSMS(to, body string) error {
-	pdu, n, err := buildPDU(to, body)
+	pdus, ns, err := buildPDUs(to, body)
 	if err != nil {
 		return fmt.Errorf("encode PDU: %w", err)
 	}
@@ -47,21 +48,29 @@ func (m *Modem) SendSMS(to, body string) error {
 		}
 	}()
 
-	// Modem replies with "> " prompt (not OK), so write directly and wait
+	for i := range pdus {
+		if err := m.sendPDU(pdus[i], ns[i]); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// sendPDU sends one PDU and waits for the modem's +CMGS:/OK response.
+// Modem replies with "> " prompt (not OK), so the PDU is written directly.
+// +CMGS: is always followed by OK — read both so the buffer is clean before
+// the deferred AT+CMGF=1 restore runs; consuming only +CMGS: leaves a stale
+// OK that Command() would misread as the CMGF=1 acknowledgement.
+func (m *Modem) sendPDU(pdu string, n int) error {
 	if _, err := fmt.Fprintf(m.port, "AT+CMGS=%d\r", n); err != nil {
 		return fmt.Errorf("send header: %w", err)
 	}
 	time.Sleep(300 * time.Millisecond)
 
-	payload := append([]byte(pdu), 0x1A)
-	if err := m.CommandRaw(payload); err != nil {
+	if err := m.CommandRaw(append([]byte(pdu), 0x1A)); err != nil {
 		return fmt.Errorf("send body: %w", err)
 	}
 
-	// SMS send can take several seconds.
-	// +CMGS: is always followed by OK — read both so the buffer is clean before
-	// the deferred AT+CMGF=1 restore runs; consuming only +CMGS: leaves a stale
-	// OK that Command() would misread as the CMGF=1 acknowledgement.
 	deadline := time.Now().Add(15 * time.Second)
 	cmgsSeen := false
 	for {

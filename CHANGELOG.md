@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `operator` field in `sms2mqtt/modem` payload — carrier name from `AT+COPS?`, omitted when not registered
+- `roaming` boolean field in `sms2mqtt/modem` payload — omitted when registration state is unknown
+- Multipart SMS support — outgoing messages longer than 70 UCS-2 characters are automatically split into concatenated parts
+- Operator name in `status` SMS reply (e.g. `… | Orange PL | net home | sim ok`)
+
+### Changed
+
+- `status` SMS reply no longer has a hard length limit — multipart SMS handles longer messages
+
 ## [0.6.1] - 2026-05-02
 
 ### Changed

@@ -3,6 +3,7 @@ package modem
 import (
 	"encoding/hex"
 	"fmt"
+	"math/rand"
 	"strings"
 	"unicode/utf16"
 )
@@ -31,30 +32,69 @@ func decodeUCS2Hex(s string) string {
 	return string(utf16.Decode(u16))
 }
 
-// buildPDU constructs an SMS-SUBMIT PDU with UCS-2 encoding.
-// Returns the uppercase hex string and the octet count (excluding the SMSC length byte).
-func buildPDU(to, body string) (string, int, error) {
+// buildPDUs constructs one or more SMS-SUBMIT PDUs with UCS-2 encoding.
+// Messages exceeding 140 bytes of encoded user data are split into concatenated
+// parts with a 6-byte UDH, allowing up to 134 bytes (67 UCS-2 chars) per part.
+// Returns hex PDU strings and their AT+CMGS octet counts.
+func buildPDUs(to, body string) (pdus []string, ns []int, err error) {
 	da, err := encodeAddress(to)
 	if err != nil {
-		return "", 0, err
+		return nil, nil, err
 	}
-
 	ud := encodeUCS2(body)
 
-	var pdu []byte
-	pdu = append(pdu, 0x00)       // SMSC length: use SIM default
-	pdu = append(pdu, 0x11)       // SMS-SUBMIT, VP=relative
-	pdu = append(pdu, 0x00)       // message reference
-	pdu = append(pdu, da...)
-	pdu = append(pdu, 0x00)       // PID: standard SMS
-	pdu = append(pdu, 0x08)       // DCS: UCS-2
-	pdu = append(pdu, 0xAA)       // VP: 4 days
-	pdu = append(pdu, byte(len(ud)))
-	pdu = append(pdu, ud...)
+	const singleMax = 140 // max UD bytes in a single-part SMS
+	const partMax   = 134 // max UD bytes per part when UDH present (140 − 6)
 
+	if len(ud) <= singleMax {
+		pdu, n := assemblePDU(0x11, da, nil, ud)
+		return []string{pdu}, []int{n}, nil
+	}
+
+	parts := splitUCS2(ud, partMax)
+	ref := byte(rand.Intn(256))
+	for i, part := range parts {
+		udh := []byte{0x05, 0x00, 0x03, ref, byte(len(parts)), byte(i + 1)}
+		pdu, n := assemblePDU(0x51, da, udh, part) // 0x51 = SMS-SUBMIT + UDHI
+		pdus = append(pdus, pdu)
+		ns = append(ns, n)
+	}
+	return
+}
+
+// assemblePDU builds a single SMS-SUBMIT PDU.
+// submitByte is 0x11 for single-part or 0x51 (UDHI set) for multipart.
+func assemblePDU(submitByte byte, da, udh, ud []byte) (string, int) {
+	var pdu []byte
+	pdu = append(pdu, 0x00)                       // SMSC length: use SIM default
+	pdu = append(pdu, submitByte)                  // SMS-SUBMIT [+UDHI]
+	pdu = append(pdu, 0x00)                        // message reference
+	pdu = append(pdu, da...)
+	pdu = append(pdu, 0x00)                        // PID: standard SMS
+	pdu = append(pdu, 0x08)                        // DCS: UCS-2
+	pdu = append(pdu, 0xAA)                        // VP: 4 days
+	pdu = append(pdu, byte(len(udh)+len(ud)))      // UDL in bytes
+	pdu = append(pdu, udh...)
+	pdu = append(pdu, ud...)
 	// AT+CMGS=n expects n = octets excluding the SMSC info (first byte is 0x00 = 1 byte)
 	n := len(pdu) - 1
-	return strings.ToUpper(hex.EncodeToString(pdu)), n, nil
+	return strings.ToUpper(hex.EncodeToString(pdu)), n
+}
+
+// splitUCS2 splits UTF-16BE encoded bytes into chunks of at most maxBytes,
+// never splitting a surrogate pair.
+func splitUCS2(ud []byte, maxBytes int) [][]byte {
+	var parts [][]byte
+	for len(ud) > maxBytes {
+		split := maxBytes
+		// Back up if the last code unit is a high surrogate (0xD800–0xDBFF)
+		if hi := uint16(ud[split-2])<<8 | uint16(ud[split-1]); hi >= 0xD800 && hi <= 0xDBFF {
+			split -= 2
+		}
+		parts = append(parts, ud[:split])
+		ud = ud[split:]
+	}
+	return append(parts, ud)
 }
 
 func encodeAddress(number string) ([]byte, error) {

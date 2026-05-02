@@ -45,13 +45,14 @@ func Version(version string) Command {
 	}
 }
 
-// Status reports version, uptime, signal, network registration, and SIM state.
+// Status reports version, uptime, signal, operator, network registration, and SIM state.
 func Status(
 	version string,
 	uptime func() time.Duration,
 	signal func() (int, bool, error),
 	network func() (string, error),
 	sim func() (string, error),
+	operator func() (string, error),
 ) Command {
 	return Command{
 		Match: func(body string) bool { return body == "status" },
@@ -60,6 +61,9 @@ func Status(
 			parts = append(parts, "up "+fmtDuration(uptime()))
 			if dbm, ok, _ := signal(); ok {
 				parts = append(parts, fmt.Sprintf("%d dBm", dbm))
+			}
+			if op, err := operator(); err == nil && op != "" {
+				parts = append(parts, op)
 			}
 			if net, err := network(); err == nil {
 				parts = append(parts, "net "+fmtNetwork(net))

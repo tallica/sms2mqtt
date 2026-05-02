@@ -83,10 +83,10 @@ Copy `.env.example` and fill in your values.
 
 **Modem telemetry** (`sms2mqtt/modem`, retained):
 ```json
-{"status": "ready", "network": "registered", "sim": "ready", "signal_dbm": -67, "signal_level": "good"}
+{"status": "ready", "network": "registered", "sim": "ready", "signal_dbm": -67, "signal_level": "good", "operator": "Orange PL", "roaming": false}
 ```
 
-Published each poll cycle. On clean shutdown, replaced with `{"status":"offline"}` — network, SIM, and signal fields are cleared from the broker's retained value.
+Published each poll cycle. On clean shutdown, replaced with `{"status":"offline"}` — all other fields are cleared from the broker's retained value.
 
 | Field | Values |
 |---|---|
@@ -95,6 +95,8 @@ Published each poll cycle. On clean shutdown, replaced with `{"status":"offline"
 | `sim` | `ready` `absent` `pin_required` `puk_required` `error` |
 | `signal_level` | `none` `poor` `fair` `good` `excellent` |
 | `signal_dbm` | integer dBm, omitted when no signal |
+| `operator` | carrier name string, omitted when not registered |
+| `roaming` | boolean, omitted when registration state is unknown |
 
 ## Bot commands
 
@@ -104,7 +106,7 @@ Send these as an SMS to the modem's number:
 |---|---|
 | `ping` | `pong` |
 | `version` | `sms2mqtt v0.5.1` |
-| `status` | `sms2mqtt v0.5.1 \| up 1d2h30m \| -65 dBm \| net home \| sim ok` |
+| `status` | `sms2mqtt v0.5.1 \| up 1d2h30m \| -65 dBm \| Orange PL \| net home \| sim ok` |
 
 Bot-handled messages are never forwarded via `FORWARD_TO`.
 
