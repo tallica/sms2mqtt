@@ -19,6 +19,7 @@ build-arm:
 	GOOS=linux GOARCH=arm GOARM=$(GOARM) go build $(LDFLAGS) -o $(BINARY) .
 
 deploy: build
+	ssh $(REMOTE) systemctl stop $(BINARY)
 	scp $(BINARY) $(REMOTE):$(DEST)
 	rm $(BINARY)
 
