@@ -221,6 +221,14 @@ mqtt:
       device:
         identifiers: ["sms2mqtt"]
 
+    - name: "Operator"
+      unique_id: sms2mqtt_modem_operator
+      state_topic: sms2mqtt/modem
+      value_template: "{{ value_json.operator }}"
+      availability_topic: sms2mqtt/status
+      device:
+        identifiers: ["sms2mqtt"]
+
     - name: "Last SMS"
       unique_id: sms2mqtt_last_sms
       state_topic: sms2mqtt/inbox
@@ -236,6 +244,16 @@ mqtt:
       payload_on: online
       payload_off: offline
       device_class: connectivity
+      device:
+        identifiers: ["sms2mqtt"]
+
+    - name: "Roaming"
+      unique_id: sms2mqtt_modem_roaming
+      state_topic: sms2mqtt/modem
+      value_template: "{{ value_json.roaming }}"
+      payload_on: "True"
+      payload_off: "False"
+      availability_topic: sms2mqtt/status
       device:
         identifiers: ["sms2mqtt"]
 ```
