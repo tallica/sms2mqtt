@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-05-02
+
+### Documentation
+
+- Added `Operator` sensor and `Roaming` binary sensor to Home Assistant device config
+
 ## [0.7.0] - 2026-05-02
 
 ### Added
@@ -130,7 +136,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - systemd unit file with `dialout` group for serial port access
 - `.env.example` template
 
-[Unreleased]: https://github.com/tallica/sms2mqtt/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/tallica/sms2mqtt/compare/v0.7.1...HEAD
+[0.7.1]: https://github.com/tallica/sms2mqtt/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/tallica/sms2mqtt/compare/v0.6.1...v0.7.0
 [0.6.1]: https://github.com/tallica/sms2mqtt/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/tallica/sms2mqtt/compare/v0.5.2...v0.6.0
