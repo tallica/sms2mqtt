@@ -50,6 +50,7 @@ func Status(
 	version string,
 	uptime func() time.Duration,
 	signal func() (int, bool, error),
+	signalLevel func() (string, error),
 	network func() (string, error),
 	sim func() (string, error),
 	operator func() (string, error),
@@ -60,7 +61,8 @@ func Status(
 			parts := []string{"sms2mqtt " + version}
 			parts = append(parts, "up "+fmtDuration(uptime()))
 			if dbm, ok, _ := signal(); ok {
-				parts = append(parts, fmt.Sprintf("%d dBm", dbm))
+				level, _ := signalLevel()
+				parts = append(parts, fmt.Sprintf("%d dBm (%s)", dbm, level))
 			}
 			if op, err := operator(); err == nil && op != "" {
 				parts = append(parts, op)

@@ -54,10 +54,11 @@ func main() {
 	// Cached modem state — updated by pollModem each tick, read by the bot handler.
 	// Avoids issuing AT commands inside pollSMS while the modem may be mid-operation.
 	var (
-		cachedDBm      *int
-		cachedNetwork  = "unknown"
-		cachedSIM      = "unknown"
-		cachedOperator = ""
+		cachedDBm         *int
+		cachedSignalLevel = ""
+		cachedNetwork     = "unknown"
+		cachedSIM         = "unknown"
+		cachedOperator    = ""
 	)
 
 	b := bot.New(
@@ -72,6 +73,7 @@ func main() {
 				}
 				return 0, false, nil
 			},
+			func() (string, error) { return cachedSignalLevel, nil },
 			func() (string, error) { return cachedNetwork, nil },
 			func() (string, error) { return cachedSIM, nil },
 			func() (string, error) { return cachedOperator, nil },
@@ -89,7 +91,7 @@ func main() {
 	for {
 		select {
 		case <-ticker.C:
-			cachedDBm, cachedNetwork, cachedSIM, cachedOperator = pollModem(m, mqtt)
+			cachedDBm, cachedSignalLevel, cachedNetwork, cachedSIM, cachedOperator = pollModem(m, mqtt)
 			pollSMS(m, mqtt, b, cfg.ForwardTo)
 
 		case req := <-mqtt.SendRequests():
@@ -108,7 +110,7 @@ func main() {
 }
 
 // pollModem queries modem state, publishes to MQTT, and returns cached values for the bot.
-func pollModem(m *modem.Modem, mqtt *mqttclient.Client) (dbm *int, network, sim, operator string) {
+func pollModem(m *modem.Modem, mqtt *mqttclient.Client) (dbm *int, signalLevel, network, sim, operator string) {
 	sim, err := m.SIMStatus()
 	if err != nil {
 		log.Error().Err(err).Msg("SIM status check failed")
@@ -142,8 +144,10 @@ func pollModem(m *modem.Modem, mqtt *mqttclient.Client) (dbm *int, network, sim,
 			msg.SignalDBm = &d
 			msg.SignalLevel = modem.SignalLevel(d)
 			dbm = msg.SignalDBm
+			signalLevel = msg.SignalLevel
 		} else {
 			msg.SignalLevel = "none"
+			signalLevel = "none"
 		}
 	}
 
