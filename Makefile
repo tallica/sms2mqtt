@@ -19,7 +19,7 @@ build-arm:
 	GOOS=linux GOARCH=arm GOARM=$(GOARM) go build $(LDFLAGS) -o $(BINARY) .
 
 deploy: build
-	ssh $(REMOTE) systemctl stop $(BINARY)
+	ssh $(REMOTE) sudo systemctl stop $(BINARY)
 	scp $(BINARY) $(REMOTE):$(DEST)
 	rm $(BINARY)
 
@@ -27,15 +27,15 @@ logs:
 	ssh $(REMOTE) journalctl -fu $(BINARY)
 
 start:
-	ssh $(REMOTE) systemctl start $(BINARY)
+	ssh $(REMOTE) sudo systemctl start $(BINARY)
 
 stop:
-	ssh $(REMOTE) systemctl stop $(BINARY)
+	ssh $(REMOTE) sudo systemctl stop $(BINARY)
 
 restart:
-	ssh $(REMOTE) systemctl restart $(BINARY)
+	ssh $(REMOTE) sudo systemctl restart $(BINARY)
 
 status:
-	ssh $(REMOTE) systemctl status $(BINARY)
+	ssh $(REMOTE) sudo systemctl status $(BINARY)
 
 .PHONY: build build-amd64 build-arm64 build-arm deploy logs start stop restart status
