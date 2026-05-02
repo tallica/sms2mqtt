@@ -51,15 +51,28 @@ func main() {
 
 	startTime := time.Now()
 
+	// Cached modem state — updated by pollModem each tick, read by the bot handler.
+	// Avoids issuing AT commands inside pollSMS while the modem may be mid-operation.
+	var (
+		cachedDBm     *int
+		cachedNetwork = "unknown"
+		cachedSIM     = "unknown"
+	)
+
 	b := bot.New(
 		bot.Ping(),
 		bot.Version(version),
 		bot.Status(
 			version,
 			func() time.Duration { return time.Since(startTime) },
-			m.SignalStrength,
-			m.NetworkRegistration,
-			m.SIMStatus,
+			func() (int, bool, error) {
+				if cachedDBm != nil {
+					return *cachedDBm, true, nil
+				}
+				return 0, false, nil
+			},
+			func() (string, error) { return cachedNetwork, nil },
+			func() (string, error) { return cachedSIM, nil },
 		),
 	)
 
@@ -74,7 +87,7 @@ func main() {
 	for {
 		select {
 		case <-ticker.C:
-			pollModem(m, mqtt)
+			cachedDBm, cachedNetwork, cachedSIM = pollModem(m, mqtt)
 			pollSMS(m, mqtt, b, cfg.ForwardTo)
 
 		case req := <-mqtt.SendRequests():
@@ -92,14 +105,15 @@ func main() {
 	}
 }
 
-func pollModem(m *modem.Modem, mqtt *mqttclient.Client) {
+// pollModem queries modem state, publishes to MQTT, and returns cached values for the bot.
+func pollModem(m *modem.Modem, mqtt *mqttclient.Client) (dbm *int, network, sim string) {
 	sim, err := m.SIMStatus()
 	if err != nil {
 		log.Error().Err(err).Msg("SIM status check failed")
 		sim = "error"
 	}
 
-	network, err := m.NetworkRegistration()
+	network, err = m.NetworkRegistration()
 	if err != nil {
 		log.Error().Err(err).Msg("network registration check failed")
 		network = "unknown"
@@ -110,10 +124,11 @@ func pollModem(m *modem.Modem, mqtt *mqttclient.Client) {
 		Network: network,
 	}
 
-	if dbm, ok, err := m.SignalStrength(); err == nil {
+	if d, ok, err := m.SignalStrength(); err == nil {
 		if ok {
-			msg.SignalDBm = &dbm
-			msg.SignalLevel = modem.SignalLevel(dbm)
+			msg.SignalDBm = &d
+			msg.SignalLevel = modem.SignalLevel(d)
+			dbm = msg.SignalDBm
 		} else {
 			msg.SignalLevel = "none"
 		}
@@ -121,6 +136,7 @@ func pollModem(m *modem.Modem, mqtt *mqttclient.Client) {
 
 	msg.Status = deriveModemStatus(sim, network, msg.SignalDBm != nil)
 	mqtt.PublishModem(msg)
+	return
 }
 
 func deriveModemStatus(sim, network string, hasSignal bool) string {

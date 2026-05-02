@@ -59,18 +59,44 @@ func Status(
 			parts := []string{"sms2mqtt " + version}
 			parts = append(parts, "up "+fmtDuration(uptime()))
 			if dbm, ok, _ := signal(); ok {
-				parts = append(parts, fmt.Sprintf("signal %d dBm", dbm))
-			} else {
-				parts = append(parts, "signal none")
+				parts = append(parts, fmt.Sprintf("%d dBm", dbm))
 			}
 			if net, err := network(); err == nil {
-				parts = append(parts, "net "+net)
+				parts = append(parts, "net "+fmtNetwork(net))
 			}
 			if s, err := sim(); err == nil {
-				parts = append(parts, "sim "+s)
+				parts = append(parts, "sim "+fmtSIM(s))
 			}
 			return strings.Join(parts, " | ")
 		},
+	}
+}
+
+func fmtNetwork(s string) string {
+	switch s {
+	case "registered":
+		return "home"
+	case "roaming":
+		return "roam"
+	case "searching":
+		return "search"
+	case "not_registered":
+		return "no net"
+	default:
+		return s
+	}
+}
+
+func fmtSIM(s string) string {
+	switch s {
+	case "ready":
+		return "ok"
+	case "pin_required":
+		return "PIN?"
+	case "puk_required":
+		return "PUK!"
+	default:
+		return s
 	}
 }
 
