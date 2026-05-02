@@ -106,9 +106,11 @@ Send these as an SMS to the modem's number:
 
 Bot-handled messages are never forwarded via `FORWARD_TO`.
 
-## Deploy as a systemd service
+## Linux host setup
 
-First-time setup on the Linux host:
+### First-time service install
+
+Run on the Linux host:
 
 ```bash
 # Create dedicated user
@@ -129,6 +131,19 @@ sudo systemctl enable sms2mqtt
 export REMOTE=user@host
 make deploy && make start && make logs
 ```
+
+### Passwordless sudo for make targets
+
+`make deploy`, `make start`, `make stop`, `make restart`, and `make status` all run `sudo systemctl` over SSH. Without passwordless sudo the commands will fail with *Interactive authentication required*.
+
+Add a sudoers rule on the Linux host:
+
+```bash
+echo 'YOUR_USER ALL=(ALL) NOPASSWD: /usr/bin/systemctl * sms2mqtt' \
+  | sudo tee /etc/sudoers.d/sms2mqtt
+```
+
+Replace `YOUR_USER` with the SSH user (e.g. `michal`). The wildcard covers `start`, `stop`, `restart`, and `status` for the `sms2mqtt` service only.
 
 ## Home Assistant integration
 
