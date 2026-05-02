@@ -168,7 +168,7 @@ notify_sms_michal:
 
 ### Sensors and device
 
-All entities are grouped under a single **GSM Modem** device by sharing the same `identifiers`:
+All entities are grouped under a single **GSM Modem** device. `availability_topic` links each sensor to the LWT topic so HA marks them unavailable on any disconnect — clean or unclean — instead of showing stale values.
 
 ```yaml
 mqtt:
@@ -177,6 +177,7 @@ mqtt:
       unique_id: sms2mqtt_modem_status
       state_topic: sms2mqtt/modem
       value_template: "{{ value_json.status }}"
+      availability_topic: sms2mqtt/status
       device:
         identifiers: ["sms2mqtt"]
         name: "GSM Modem"
@@ -187,6 +188,7 @@ mqtt:
       unique_id: sms2mqtt_modem_network
       state_topic: sms2mqtt/modem
       value_template: "{{ value_json.network }}"
+      availability_topic: sms2mqtt/status
       device:
         identifiers: ["sms2mqtt"]
 
@@ -194,6 +196,7 @@ mqtt:
       unique_id: sms2mqtt_modem_sim
       state_topic: sms2mqtt/modem
       value_template: "{{ value_json.sim }}"
+      availability_topic: sms2mqtt/status
       device:
         identifiers: ["sms2mqtt"]
 
@@ -204,6 +207,7 @@ mqtt:
       unit_of_measurement: "dBm"
       device_class: signal_strength
       state_class: measurement
+      availability_topic: sms2mqtt/status
       device:
         identifiers: ["sms2mqtt"]
 
@@ -211,6 +215,7 @@ mqtt:
       unique_id: sms2mqtt_modem_signal_level
       state_topic: sms2mqtt/modem
       value_template: "{{ value_json.signal_level }}"
+      availability_topic: sms2mqtt/status
       device:
         identifiers: ["sms2mqtt"]
 
