@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.5] - 2026-05-10
+
 ### Fixed
 
 - Alphanumeric sender addresses (e.g. "Play") were decoded as garbled BCD digits instead of text. The PDU decoder now detects TON=alphanumeric (0xD0) and unpacks the address bytes as packed GSM-7 septets.
@@ -168,7 +170,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - systemd unit file with `dialout` group for serial port access
 - `.env.example` template
 
-[Unreleased]: https://github.com/tallica/sms2mqtt/compare/v0.7.4...HEAD
+[Unreleased]: https://github.com/tallica/sms2mqtt/compare/v0.7.5...HEAD
+[0.7.5]: https://github.com/tallica/sms2mqtt/compare/v0.7.4...v0.7.5
 [0.7.4]: https://github.com/tallica/sms2mqtt/compare/v0.7.3...v0.7.4
 [0.7.3]: https://github.com/tallica/sms2mqtt/compare/v0.7.2...v0.7.3
 [0.7.2]: https://github.com/tallica/sms2mqtt/compare/v0.7.1...v0.7.2
