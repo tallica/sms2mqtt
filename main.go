@@ -205,8 +205,10 @@ func pollSMS(m *modem.Modem, mqtt *mqttclient.Client, b *bot.Bot, forwardTo stri
 				log.Info().Str("to", forwardTo).Str("from", sms.From).Msg("SMS forwarded")
 			}
 		}
-		if err := m.DeleteSMS(sms.Index); err != nil {
-			log.Error().Err(err).Int("index", sms.Index).Msg("delete SMS failed")
+		for _, idx := range sms.Indices {
+			if err := m.DeleteSMS(idx); err != nil {
+				log.Error().Err(err).Int("index", idx).Msg("delete SMS failed")
+			}
 		}
 	}
 }

@@ -3,6 +3,7 @@
 Bridge between a Huawei E3272s-153 USB modem and Home Assistant via MQTT.
 
 - Polls the modem for incoming SMS and publishes them to `sms2mqtt/inbox`
+- Reassembles multipart (concatenated) SMS into a single message before publishing or forwarding
 - Subscribes to `sms2mqtt/send` to send outgoing SMS (full Unicode / emoji support)
 - Publishes `online`/`offline` to `sms2mqtt/status` (retained Last Will)
 - Publishes modem telemetry to `sms2mqtt/modem` each poll cycle (status, network, SIM, signal)
@@ -105,8 +106,8 @@ Send these as an SMS to the modem's number:
 | Command | Reply |
 |---|---|
 | `ping` | `pong` |
-| `version` | `sms2mqtt v0.5.1` |
-| `status` | `sms2mqtt v0.5.1 \| up 1d2h30m \| -65 dBm (good) \| Orange PL \| network: registered \| sim: ready` |
+| `version` | `sms2mqtt v0.7.3` |
+| `status` | `sms2mqtt v0.7.3 \| up 1d2h30m \| -65 dBm (good) \| Orange PL \| network: registered \| sim: ready` |
 
 Bot-handled messages are never forwarded via `FORWARD_TO`.
 

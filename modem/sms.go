@@ -2,6 +2,7 @@ package modem
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -9,22 +10,36 @@ import (
 )
 
 type SMS struct {
-	Index int
-	From  string
-	Time  time.Time
-	Body  string
+	Indices []int
+	From    string
+	Time    time.Time
+	Body    string
 }
 
-// ListSMS returns all SMS messages currently stored on the modem.
+// ListSMS reads all SMS messages from the modem in PDU mode, reassembling any
+// multipart (concatenated) messages into single entries before returning them.
 func (m *Modem) ListSMS() ([]SMS, error) {
-	lines, err := m.Command(`AT+CMGL="ALL"`)
+	if _, err := m.Command("AT+CMGF=0"); err != nil {
+		return nil, fmt.Errorf("PDU mode: %w", err)
+	}
+	defer func() {
+		if _, err := m.Command("AT+CMGF=1"); err != nil {
+			log.Warn().Err(err).Msg("restore text mode after list SMS")
+		}
+	}()
+
+	lines, err := m.Command("AT+CMGL=4")
 	if err != nil {
 		return nil, err
 	}
-	return parseSMSList(lines)
+	parts, err := parsePDUList(lines)
+	if err != nil {
+		return nil, err
+	}
+	return reassembleMultipart(parts), nil
 }
 
-// DeleteSMS removes a message by its index.
+// DeleteSMS removes a message by its modem storage index.
 func (m *Modem) DeleteSMS(index int) error {
 	_, err := m.Command(fmt.Sprintf("AT+CMGD=%d", index))
 	return err
@@ -94,97 +109,87 @@ func (m *Modem) sendPDU(pdu string, n int) error {
 	}
 }
 
-// parseSMSList parses the output of AT+CMGL="ALL".
-//
-// Example raw output (text mode):
-//   +CMGL: 1,"REC UNREAD","+48123456789",,"24/04/30,12:00:00+08"
-//   Hello world
-//   +CMGL: 2,"REC READ","+48987654321",,"24/04/30,13:00:00+08"
-//   Another message
-func parseSMSList(lines []string) ([]SMS, error) {
-	var messages []SMS
-	var current *SMS
+// parsePDUList parses AT+CMGL=4 output in PDU mode.
+// Each message is a "+CMGL: <index>,..." header followed by a hex PDU line.
+func parsePDUList(lines []string) ([]rawSMSPart, error) {
+	var parts []rawSMSPart
+	var pendingIndex *int
 
 	for _, line := range lines {
 		if strings.HasPrefix(line, "+CMGL:") {
-			if current != nil {
-				messages = append(messages, *current)
-			}
-			sms, err := parseCMGLHeader(line)
+			line = strings.TrimPrefix(line, "+CMGL: ")
+			fields := strings.SplitN(line, ",", 5)
+			var idx int
+			fmt.Sscanf(fields[0], "%d", &idx)
+			pendingIndex = &idx
+		} else if pendingIndex != nil && line != "" {
+			part, err := decodeSMSDeliverPDU(line, *pendingIndex)
 			if err != nil {
-				return nil, err
+				log.Warn().Err(err).Int("index", *pendingIndex).Str("pdu", line).Msg("PDU decode failed, skipping")
+			} else {
+				parts = append(parts, part)
 			}
-			current = &sms
-		} else if current != nil {
-			if current.Body != "" {
-				current.Body += "\n"
-			}
-			current.Body += decodeUCS2Hex(line)
+			pendingIndex = nil
 		}
 	}
-	if current != nil {
-		messages = append(messages, *current)
-	}
-	return messages, nil
+	return parts, nil
 }
 
-// parseCMGLHeader parses a +CMGL header line.
-func parseCMGLHeader(line string) (SMS, error) {
-	// +CMGL: <index>,"<status>","<from>",,"<time>"
-	line = strings.TrimPrefix(line, "+CMGL: ")
-	parts := splitCSV(line)
-	if len(parts) < 3 {
-		return SMS{}, fmt.Errorf("unexpected CMGL format: %q", line)
+// reassembleMultipart groups multipart SMS segments by (sender, ref) and
+// concatenates them in order. Incomplete groups (not all parts present yet)
+// are left on the modem and excluded from the result.
+func reassembleMultipart(parts []rawSMSPart) []SMS {
+	type groupKey struct {
+		from string
+		ref  uint16
 	}
 
-	var idx int
-	fmt.Sscanf(parts[0], "%d", &idx)
+	groups := make(map[groupKey][]rawSMSPart)
+	var groupOrder []groupKey
+	var messages []SMS
 
-	from := strings.Trim(parts[2], "\"")
-	ts := ""
-	if len(parts) >= 5 {
-		ts = strings.Trim(parts[4], "\"")
-	}
-
-	t := parseModemTime(ts)
-
-	return SMS{Index: idx, From: from, Time: t}, nil
-}
-
-// parseModemTime parses the modem timestamp format: "YY/MM/DD,HH:MM:SS±ZZ"
-func parseModemTime(s string) time.Time {
-	s = strings.Trim(s, "\"")
-	// Try with timezone offset suffix (e.g. +08 meaning +2h)
-	layouts := []string{
-		"06/01/02,15:04:05-07",
-		"06/01/02,15:04:05+07",
-		"06/01/02,15:04:05",
-	}
-	for _, layout := range layouts {
-		if t, err := time.Parse(layout, s); err == nil {
-			return t
+	for _, p := range parts {
+		if p.concat == nil {
+			messages = append(messages, SMS{
+				Indices: []int{p.index},
+				From:    p.from,
+				Time:    p.time,
+				Body:    p.body,
+			})
+			continue
 		}
-	}
-	return time.Now()
-}
-
-// splitCSV splits a comma-separated string respecting quoted fields.
-func splitCSV(s string) []string {
-	var fields []string
-	var cur strings.Builder
-	inQuote := false
-	for _, r := range s {
-		switch {
-		case r == '"':
-			inQuote = !inQuote
-			cur.WriteRune(r)
-		case r == ',' && !inQuote:
-			fields = append(fields, cur.String())
-			cur.Reset()
-		default:
-			cur.WriteRune(r)
+		k := groupKey{p.from, p.concat.ref}
+		if _, exists := groups[k]; !exists {
+			groupOrder = append(groupOrder, k)
 		}
+		groups[k] = append(groups[k], p)
 	}
-	fields = append(fields, cur.String())
-	return fields
+
+	for _, k := range groupOrder {
+		group := groups[k]
+		if len(group) < int(group[0].concat.total) {
+			// Not all parts received yet; leave them on the modem.
+			continue
+		}
+		sort.Slice(group, func(i, j int) bool {
+			return group[i].concat.part < group[j].concat.part
+		})
+		var body strings.Builder
+		var indices []int
+		for _, p := range group {
+			body.WriteString(p.body)
+			indices = append(indices, p.index)
+		}
+		messages = append(messages, SMS{
+			Indices: indices,
+			From:    group[0].from,
+			Time:    group[0].time,
+			Body:    body.String(),
+		})
+	}
+
+	sort.Slice(messages, func(i, j int) bool {
+		return messages[i].Time.Before(messages[j].Time)
+	})
+	return messages
 }

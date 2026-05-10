@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Multipart (concatenated) SMS messages — such as long UCS-2 messages from carriers — were forwarded as multiple separate messages. SMS are now read in PDU mode so UDH concatenation headers can be parsed and parts reassembled into a single message before publishing or forwarding.
+
 ## [0.7.3] - 2026-05-02
 
 ### Changed

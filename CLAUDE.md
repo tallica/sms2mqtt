@@ -27,8 +27,8 @@ macOS cannot run the service directly — the Huawei E3272 requires the Linux `o
 | `main` | `main.go` | Wires modem + MQTT + bot; drives the poll/send select loop |
 | `bot` | `bot/bot.go` | Command dispatch — `Bot`, built-in `Ping()` and `Status()` commands |
 | `modem` | `modem/modem.go` | Serial port open, AT command send/receive, drain |
-| `modem` | `modem/sms.go` | `ListSMS`, `DeleteSMS`, `SendSMS`, AT+CMGL parser |
-| `modem` | `modem/pdu.go` | PDU encoding — `buildPDUs` (multipart), BCD address encoding, UCS-2 body encoding |
+| `modem` | `modem/sms.go` | `ListSMS`, `DeleteSMS`, `SendSMS`, PDU list parser, multipart reassembly |
+| `modem` | `modem/pdu.go` | PDU encode (`buildPDUs`) and decode (`decodeSMSDeliverPDU`), GSM-7/UCS-2, UDH parsing |
 | `modem` | `modem/signal.go` | `SignalStrength`, `SignalLevel`, `NetworkRegistration`, `SIMStatus`, `Operator` |
 | `mqttclient` | `mqttclient/client.go` | Paho wrapper — LWT, publish inbox, send channel |
 | `config` | `config/config.go` | All config from env vars with defaults |
@@ -37,10 +37,11 @@ macOS cannot run the service directly — the Huawei E3272 requires the Linux `o
 
 - **AT port**: `/dev/ttyUSB0` — the AT command interface on the E3272.  
   `/dev/ttyUSB2` is a secondary NDIS port; not used here.
-- **Receive mode**: text mode (`AT+CMGF=1`), GSM charset (`AT+CSCS="GSM"`). Incoming messages are parsed as text.
-- **Send mode**: PDU mode (`AT+CMGF=0`) with UCS-2 encoding. The modem is switched to PDU mode per send and restored to text mode immediately after. Supports emoji and full Unicode.
+- **Idle mode**: text mode (`AT+CMGF=1`), GSM charset (`AT+CSCS="GSM"`).
+- **Read mode**: switches to PDU mode (`AT+CMGF=0`) per poll to read raw PDUs via `AT+CMGL=4`. This allows UDH (User Data Header) parsing for multipart SMS reassembly. Text mode is restored immediately after listing. Multipart segments arriving in the same poll are reassembled into one message; incomplete groups are left on the modem for the next poll.
+- **Send mode**: PDU mode (`AT+CMGF=0`) with UCS-2 encoding, switched per send and restored after. Supports emoji and full Unicode.
 - **Push notifications disabled**: `AT+CNMI=0,0,0,0,0` — the service polls instead of reacting to unsolicited result codes.
-- **Delete on read**: messages are deleted from modem storage after successful MQTT publish to avoid re-delivery.
+- **Delete on read**: all modem storage indices belonging to a message (one for single-part, all parts for multipart) are deleted after successful MQTT publish to avoid re-delivery.
 
 ## MQTT topics
 
