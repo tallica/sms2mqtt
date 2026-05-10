@@ -159,7 +159,12 @@ func (r *pduReader) rest() []byte {
 }
 
 // decodeBCDAddr decodes a semi-octet BCD GSM address.
+// When TON indicates alphanumeric (bits 6:4 = 101), the address bytes are
+// packed GSM-7 septets; numDigits counts semi-octets (bits/4), not characters.
 func decodeBCDAddr(bcd []byte, ton byte, numDigits int) string {
+	if ton&0x70 == 0x50 {
+		return decodeGSM7(bcd, numDigits*4/7, 0)
+	}
 	var sb strings.Builder
 	if ton == 0x91 {
 		sb.WriteByte('+')

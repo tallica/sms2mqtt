@@ -77,6 +77,8 @@ Copy `.env.example` and fill in your values.
 {"from": "+48123456789", "body": "Hello", "time": "2026-04-30T12:00:00Z"}
 ```
 
+`from` is a phone number (e.g. `+48123456789`) for regular senders, or an alphanumeric string (e.g. `Play`) for operator shortcodes.
+
 **Send SMS** (publish to `sms2mqtt/send`):
 ```json
 {"to": "+48123456789", "body": "Hello back 👋"}
@@ -106,8 +108,8 @@ Send these as an SMS to the modem's number:
 | Command | Reply |
 |---|---|
 | `ping` | `pong` |
-| `version` | `sms2mqtt v0.7.3` |
-| `status` | `sms2mqtt v0.7.3 \| up 1d2h30m \| -65 dBm (good) \| Orange PL \| network: registered \| sim: ready` |
+| `version` | `sms2mqtt v0.7.4` |
+| `status` | `sms2mqtt v0.7.4 \| up 1d2h30m \| -65 dBm (good) \| Orange PL \| network: registered \| sim: ready` |
 
 Bot-handled messages are never forwarded via `FORWARD_TO`.
 

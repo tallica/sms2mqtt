@@ -20,6 +20,7 @@ func TestDecodeBCDAddr(t *testing.T) {
 		{"international odd padded", "21436587F9", 0x91, 9, "+123456789"},
 		{"national even", "214365", 0x81, 6, "123456"},
 		{"national odd padded", "2143F5", 0x81, 5, "12345"},
+		{"alphanumeric Play", "5076380F", 0xD0, 7, "Play"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -216,6 +217,23 @@ func TestDecodeSMSDeliverPDU_GSM7(t *testing.T) {
 	part, err := decodeSMSDeliverPDU(pdu, 1)
 	if err != nil {
 		t.Fatalf("decode: %v", err)
+	}
+	if part.body != "hello" {
+		t.Errorf("body = %q, want hello", part.body)
+	}
+}
+
+func TestDecodeSMSDeliverPDU_AlphanumericSender(t *testing.T) {
+	// OA: length=07, TON=D0 (alphanumeric), data=5076380F → "Play"
+	pdu := "00" + "04" + "07D0" + "5076380F" + "00" + "00" +
+		"20806291731480" + "05" + "E8329BFD06"
+
+	part, err := decodeSMSDeliverPDU(pdu, 1)
+	if err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if part.from != "Play" {
+		t.Errorf("from = %q, want %q", part.from, "Play")
 	}
 	if part.body != "hello" {
 		t.Errorf("body = %q, want hello", part.body)

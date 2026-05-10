@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Alphanumeric sender addresses (e.g. "Play") were decoded as garbled BCD digits instead of text. The PDU decoder now detects TON=alphanumeric (0xD0) and unpacks the address bytes as packed GSM-7 septets.
+
 ### Tests
 
 - Split `modem` package tests into `pdu_test.go`, `sms_test.go`, and `signal_test.go` to mirror the source file layout
