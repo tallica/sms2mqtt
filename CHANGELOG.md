@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.4] - 2026-05-10
+
 ### Fixed
 
 - Multipart (concatenated) SMS messages — such as long UCS-2 messages from carriers — were forwarded as multiple separate messages. SMS are now read in PDU mode so UDH concatenation headers can be parsed and parts reassembled into a single message before publishing or forwarding.
@@ -158,7 +160,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - systemd unit file with `dialout` group for serial port access
 - `.env.example` template
 
-[Unreleased]: https://github.com/tallica/sms2mqtt/compare/v0.7.3...HEAD
+[Unreleased]: https://github.com/tallica/sms2mqtt/compare/v0.7.4...HEAD
+[0.7.4]: https://github.com/tallica/sms2mqtt/compare/v0.7.3...v0.7.4
 [0.7.3]: https://github.com/tallica/sms2mqtt/compare/v0.7.2...v0.7.3
 [0.7.2]: https://github.com/tallica/sms2mqtt/compare/v0.7.1...v0.7.2
 [0.7.1]: https://github.com/tallica/sms2mqtt/compare/v0.7.0...v0.7.1
