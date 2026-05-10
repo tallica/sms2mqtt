@@ -10,13 +10,14 @@ Development is on macOS; the service runs on a remote Linux host over SSH.
 
 ```bash
 make build                  # compile check (macOS)
+make test                   # run unit tests
 make deploy                 # cross-compile linux/arm64 + scp to $REMOTE:/usr/local/bin/sms2mqtt
 make deploy ARCH=amd64      # x86-64 target
 make deploy ARCH=arm        # Pi 4 32-bit OS
 make restart && make logs   # restart service and tail logs
 ```
 
-Set `REMOTE=user@host` in the shell before using `make`. Default `ARCH` is `arm64` (Raspberry Pi 4 64-bit). Available targets: `build`, `build-arm64`, `build-arm`, `build-amd64`, `deploy`, `start`, `stop`, `restart`, `status`, `logs`.
+Set `REMOTE=user@host` in the shell before using `make`. Default `ARCH` is `arm64` (Raspberry Pi 4 64-bit). Available targets: `build`, `test`, `build-arm64`, `build-arm`, `build-amd64`, `deploy`, `start`, `stop`, `restart`, `status`, `logs`.
 
 macOS cannot run the service directly — the Huawei E3272 requires the Linux `option` kernel module to expose a serial port.
 
@@ -30,6 +31,7 @@ macOS cannot run the service directly — the Huawei E3272 requires the Linux `o
 | `modem` | `modem/sms.go` | `ListSMS`, `DeleteSMS`, `SendSMS`, PDU list parser, multipart reassembly |
 | `modem` | `modem/pdu.go` | PDU encode (`buildPDUs`) and decode (`decodeSMSDeliverPDU`), GSM-7/UCS-2, UDH parsing |
 | `modem` | `modem/signal.go` | `SignalStrength`, `SignalLevel`, `NetworkRegistration`, `SIMStatus`, `Operator` |
+| `modem` | `modem/pdu_test.go` | Unit tests for PDU encode/decode, multipart reassembly, signal level mapping |
 | `mqttclient` | `mqttclient/client.go` | Paho wrapper — LWT, publish inbox, send channel |
 | `config` | `config/config.go` | All config from env vars with defaults |
 
@@ -80,7 +82,7 @@ Bot-handled messages are never forwarded. Add new commands in `bot/bot.go`.
 
 - Logging via `zerolog` — structured, console-formatted to stderr.
 - No comments explaining what the code does; only comments for non-obvious constraints (AT quirks, timing, modem-specific behaviour).
-- No mocks — the modem package is thin enough to test against a real device or a pty.
+- Pure-logic helpers in the `modem` package (PDU codec, multipart reassembly, signal-level mapping) have unit tests in `modem/pdu_test.go`. Hardware-tied paths (serial I/O, AT command exchange) have no mocks — test those against a real device or a pty.
 - Keep `main.go` as a wiring layer only — no business logic.
 - Update `CHANGELOG.md` under `## [Unreleased]` for every notable change.
 

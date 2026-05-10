@@ -9,6 +9,9 @@ LDFLAGS  := -ldflags "-X main.version=$(VERSION)"
 build:
 	GOOS=linux GOARCH=$(ARCH) GOARM=$(GOARM) go build $(LDFLAGS) -o $(BINARY) .
 
+test:
+	go test ./...
+
 build-amd64:
 	GOOS=linux GOARCH=amd64 go build $(LDFLAGS) -o $(BINARY) .
 
@@ -38,4 +41,4 @@ restart:
 status:
 	ssh $(REMOTE) sudo systemctl status $(BINARY)
 
-.PHONY: build build-amd64 build-arm64 build-arm deploy logs start stop restart status
+.PHONY: build test build-amd64 build-arm64 build-arm deploy logs start stop restart status
