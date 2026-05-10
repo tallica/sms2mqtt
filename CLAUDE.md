@@ -31,7 +31,9 @@ macOS cannot run the service directly — the Huawei E3272 requires the Linux `o
 | `modem` | `modem/sms.go` | `ListSMS`, `DeleteSMS`, `SendSMS`, PDU list parser, multipart reassembly |
 | `modem` | `modem/pdu.go` | PDU encode (`buildPDUs`) and decode (`decodeSMSDeliverPDU`), GSM-7/UCS-2, UDH parsing |
 | `modem` | `modem/signal.go` | `SignalStrength`, `SignalLevel`, `NetworkRegistration`, `SIMStatus`, `Operator` |
-| `modem` | `modem/pdu_test.go` | Unit tests for PDU encode/decode, multipart reassembly, signal level mapping |
+| `modem` | `modem/pdu_test.go` | Unit tests for PDU encode/decode (GSM-7, UCS-2, UDH, BCD, SCTS, multipart split) |
+| `modem` | `modem/sms_test.go` | Unit tests for `parsePDUList` and `reassembleMultipart` |
+| `modem` | `modem/signal_test.go` | Unit tests for `SignalLevel` |
 | `mqttclient` | `mqttclient/client.go` | Paho wrapper — LWT, publish inbox, send channel |
 | `config` | `config/config.go` | All config from env vars with defaults |
 
