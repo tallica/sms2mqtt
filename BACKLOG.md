@@ -13,3 +13,5 @@
 ## Messaging
 
 - **Incoming SMS forwarding improvements** — `FORWARD_TO` currently sends `From: +48...\nbody`; could be more configurable (template, subject, multiple recipients)
+
+- **USSD code support** — send USSD codes (e.g. `*100#`) via a bot command (`ussd *100#`) and SMS-reply with the carrier's response; new `modem/ussd.go` using `AT+CUSD`. Start with single-shot codes only; interactive session support (carrier menus) left for later.
