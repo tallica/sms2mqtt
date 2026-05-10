@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Tests
 
 - Added unit tests for the `modem` package covering PDU encode/decode (GSM-7, UCS-2, UDH, BCD addressing, SCTS), multipart split/reassembly, surrogate-pair-safe UCS-2 chunking, PDU list parsing, and signal-level mapping
+- Added GitHub Actions workflow running `go build` and `go test -race` on push and pull requests
 
 ## [0.7.3] - 2026-05-02
 
