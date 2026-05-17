@@ -32,11 +32,7 @@ func (m *Modem) ListSMS() ([]SMS, error) {
 	if err != nil {
 		return nil, err
 	}
-	parts, err := parsePDUList(lines)
-	if err != nil {
-		return nil, err
-	}
-	return reassembleMultipart(parts), nil
+	return reassembleMultipart(parsePDUList(lines)), nil
 }
 
 // DeleteSMS removes a message by its modem storage index.
@@ -111,16 +107,18 @@ func (m *Modem) sendPDU(pdu string, n int) error {
 
 // parsePDUList parses AT+CMGL=4 output in PDU mode.
 // Each message is a "+CMGL: <index>,..." header followed by a hex PDU line.
-func parsePDUList(lines []string) ([]rawSMSPart, error) {
+func parsePDUList(lines []string) []rawSMSPart {
 	var parts []rawSMSPart
 	var pendingIndex *int
 
 	for _, line := range lines {
-		if strings.HasPrefix(line, "+CMGL:") {
-			line = strings.TrimPrefix(line, "+CMGL: ")
-			fields := strings.SplitN(line, ",", 5)
+		if rest, found := strings.CutPrefix(line, "+CMGL: "); found {
+			fields := strings.SplitN(rest, ",", 5)
 			var idx int
-			fmt.Sscanf(fields[0], "%d", &idx)
+			if _, err := fmt.Sscanf(fields[0], "%d", &idx); err != nil {
+				log.Warn().Err(err).Str("field", fields[0]).Msg("parse +CMGL index, skipping")
+				continue
+			}
 			pendingIndex = &idx
 		} else if pendingIndex != nil && line != "" {
 			part, err := decodeSMSDeliverPDU(line, *pendingIndex)
@@ -132,7 +130,7 @@ func parsePDUList(lines []string) ([]rawSMSPart, error) {
 			pendingIndex = nil
 		}
 	}
-	return parts, nil
+	return parts
 }
 
 // reassembleMultipart groups multipart SMS segments by (sender, ref) and

@@ -1,6 +1,7 @@
 package modem
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -40,7 +41,7 @@ func (m *Modem) init() error {
 	required := []string{
 		"ATZ",               // reset
 		"ATE0",              // echo off
-		"AT+CMGF=1",        // SMS text mode
+		"AT+CMGF=1",         // SMS text mode
 		"AT+CNMI=0,0,0,0,0", // disable SMS push notifications (we poll)
 	}
 	for _, cmd := range required {
@@ -116,7 +117,7 @@ func (m *Modem) readLine(deadline time.Time) (string, error) {
 		}
 		buf = append(buf, b[0])
 	}
-	return "", fmt.Errorf("read timeout")
+	return "", errors.New("read timeout")
 }
 
 // drain discards any bytes already waiting in the modem's buffer.

@@ -2,8 +2,9 @@ package modem
 
 import (
 	"encoding/hex"
+	"errors"
 	"fmt"
-	"math/rand"
+	"math/rand/v2"
 	"strings"
 	"time"
 	"unicode/utf16"
@@ -56,7 +57,7 @@ func decodeSMSDeliverPDU(hexStr string, index int) (rawSMSPart, error) {
 	if err != nil {
 		return rawSMSPart{}, fmt.Errorf("SMSC length: %w", err)
 	}
-	if err := r.skip(int(smscLen)); err != nil {
+	if err = r.skip(int(smscLen)); err != nil {
 		return rawSMSPart{}, fmt.Errorf("SMSC data: %w", err)
 	}
 
@@ -83,7 +84,7 @@ func decodeSMSDeliverPDU(hexStr string, index int) (rawSMSPart, error) {
 	from := decodeBCDAddr(oaBCD, oaTON, int(oaDigits))
 
 	// PID (skip).
-	if _, err := r.readByte(); err != nil {
+	if _, err = r.readByte(); err != nil {
 		return rawSMSPart{}, fmt.Errorf("PID: %w", err)
 	}
 
@@ -111,10 +112,7 @@ func decodeSMSDeliverPDU(hexStr string, index int) (rawSMSPart, error) {
 	var concat *concatInfo
 	udhBytes := 0
 	if udhi && len(ud) > 0 {
-		udhBytes = int(ud[0]) + 1 // length byte + content
-		if udhBytes > len(ud) {
-			udhBytes = len(ud)
-		}
+		udhBytes = min(int(ud[0])+1, len(ud)) // length byte + content, clamped
 		concat = parseUDH(ud[1:udhBytes])
 		ud = ud[udhBytes:]
 	}
@@ -128,9 +126,11 @@ type pduReader struct {
 	pos int
 }
 
+var errPDUTruncated = errors.New("PDU truncated")
+
 func (r *pduReader) readByte() (byte, error) {
 	if r.pos >= len(r.b) {
-		return 0, fmt.Errorf("PDU truncated")
+		return 0, errPDUTruncated
 	}
 	v := r.b[r.pos]
 	r.pos++
@@ -139,7 +139,7 @@ func (r *pduReader) readByte() (byte, error) {
 
 func (r *pduReader) skip(n int) error {
 	if r.pos+n > len(r.b) {
-		return fmt.Errorf("PDU truncated")
+		return errPDUTruncated
 	}
 	r.pos += n
 	return nil
@@ -147,7 +147,7 @@ func (r *pduReader) skip(n int) error {
 
 func (r *pduReader) readN(n int) ([]byte, error) {
 	if r.pos+n > len(r.b) {
-		return nil, fmt.Errorf("PDU truncated")
+		return nil, errPDUTruncated
 	}
 	v := r.b[r.pos : r.pos+n]
 	r.pos += n
@@ -189,7 +189,7 @@ func decodeSCTS(b []byte) time.Time {
 	month := bcd(b[1])
 	day := bcd(b[2])
 	hour := bcd(b[3])
-	min := bcd(b[4])
+	minute := bcd(b[4])
 	sec := bcd(b[5])
 	tzByte := b[6]
 	negative := tzByte&0x08 != 0
@@ -201,7 +201,7 @@ func decodeSCTS(b []byte) time.Time {
 	if year < 2000 || month < 1 || month > 12 || day < 1 || day > 31 {
 		return time.Now()
 	}
-	return time.Date(year, time.Month(month), day, hour, min, sec, 0, time.FixedZone("", tzSecs))
+	return time.Date(year, time.Month(month), day, hour, minute, sec, 0, time.FixedZone("", tzSecs))
 }
 
 // parseUDH scans a User Data Header for concatenated SMS info (IEI 0x00 or 0x08).
@@ -268,34 +268,40 @@ func decodeUserData(dcs byte, ud []byte, udl int, udhi bool, udhBytes int) strin
 func decodeGSM7(b []byte, numSeptets, fillBits int) string {
 	var sb strings.Builder
 	esc := false
-	for i := 0; i < numSeptets; i++ {
-		pos := fillBits + i*7
-		byteIdx := pos / 8
-		bitOff := uint(pos % 8)
-		var s byte
-		if byteIdx < len(b) {
-			s = b[byteIdx] >> bitOff
-			if bitOff > 1 && byteIdx+1 < len(b) {
-				s |= b[byteIdx+1] << (8 - bitOff)
-			}
-			s &= 0x7F
-		}
-		if esc {
-			esc = false
-			if r, ok := gsm7Ext[s]; ok {
-				sb.WriteRune(r)
-			}
-			continue
-		}
-		if s == 0x1B {
-			esc = true
-			continue
-		}
-		if int(s) < len(gsm7Table) && gsm7Table[s] != 0 {
-			sb.WriteRune(gsm7Table[s])
-		}
+	for i := range numSeptets {
+		s := septetAt(b, fillBits+i*7)
+		esc = appendGSM7(&sb, s, esc)
 	}
 	return sb.String()
+}
+
+func septetAt(b []byte, pos int) byte {
+	byteIdx := pos / 8
+	bitOff := uint(pos % 8)
+	if byteIdx >= len(b) {
+		return 0
+	}
+	s := b[byteIdx] >> bitOff
+	if bitOff > 1 && byteIdx+1 < len(b) {
+		s |= b[byteIdx+1] << (8 - bitOff)
+	}
+	return s & 0x7F
+}
+
+func appendGSM7(sb *strings.Builder, s byte, esc bool) bool {
+	if esc {
+		if r, ok := gsm7Ext[s]; ok {
+			sb.WriteRune(r)
+		}
+		return false
+	}
+	if s == 0x1B {
+		return true
+	}
+	if int(s) < len(gsm7Table) && gsm7Table[s] != 0 {
+		sb.WriteRune(gsm7Table[s])
+	}
+	return false
 }
 
 // decodeUCS2Bytes decodes a UCS-2 big-endian byte slice.
@@ -330,28 +336,28 @@ func buildPDUs(to, body string) (pdus []string, ns []int, err error) {
 	}
 
 	parts := splitUCS2(ud, partMax)
-	ref := byte(rand.Intn(256))
+	ref := byte(rand.IntN(256)) //nolint:gosec // SMS concat reference, not security-sensitive
 	for i, part := range parts {
-		udh := []byte{0x05, 0x00, 0x03, ref, byte(len(parts)), byte(i + 1)}
+		udh := []byte{0x05, 0x00, 0x03, ref, byte(len(parts) & 0xFF), byte((i + 1) & 0xFF)}
 		pdu, n := assemblePDU(0x51, da, udh, part) // 0x51 = SMS-SUBMIT + UDHI
 		pdus = append(pdus, pdu)
 		ns = append(ns, n)
 	}
-	return
+	return pdus, ns, nil
 }
 
 // assemblePDU builds a single SMS-SUBMIT PDU.
 // submitByte is 0x11 for single-part or 0x51 (UDHI set) for multipart.
 func assemblePDU(submitByte byte, da, udh, ud []byte) (string, int) {
 	var pdu []byte
-	pdu = append(pdu, 0x00)                  // SMSC length: use SIM default
-	pdu = append(pdu, submitByte)             // SMS-SUBMIT [+UDHI]
-	pdu = append(pdu, 0x00)                  // message reference
+	pdu = append(pdu, 0x00)       // SMSC length: use SIM default
+	pdu = append(pdu, submitByte) // SMS-SUBMIT [+UDHI]
+	pdu = append(pdu, 0x00)       // message reference
 	pdu = append(pdu, da...)
-	pdu = append(pdu, 0x00)                  // PID: standard SMS
-	pdu = append(pdu, 0x08)                  // DCS: UCS-2
-	pdu = append(pdu, 0xAA)                  // VP: 4 days
-	pdu = append(pdu, byte(len(udh)+len(ud))) // UDL in bytes
+	pdu = append(pdu, 0x00)                          // PID: standard SMS
+	pdu = append(pdu, 0x08)                          // DCS: UCS-2
+	pdu = append(pdu, 0xAA)                          // VP: 4 days
+	pdu = append(pdu, byte((len(udh)+len(ud))&0xFF)) // UDL in bytes
 	pdu = append(pdu, udh...)
 	pdu = append(pdu, ud...)
 	// AT+CMGS=n expects n = octets excluding the SMSC info (first byte is 0x00 = 1 byte)
@@ -403,7 +409,7 @@ func encodeAddress(number string) ([]byte, error) {
 		bcd[i] = hi<<4 | lo
 	}
 
-	result := []byte{byte(len(d)), tonNpi}
+	result := []byte{byte(len(d) & 0xFF), tonNpi}
 	return append(result, bcd...), nil
 }
 
@@ -413,7 +419,7 @@ func encodeUCS2(s string) []byte {
 	buf := make([]byte, len(u16)*2)
 	for i, v := range u16 {
 		buf[i*2] = byte(v >> 8)
-		buf[i*2+1] = byte(v)
+		buf[i*2+1] = byte(v & 0xFF)
 	}
 	return buf
 }

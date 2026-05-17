@@ -39,7 +39,8 @@ func main() {
 	log.Info().Str("broker", cfg.MQTT.Broker).Msg("connecting to MQTT")
 	mqtt, err := mqttclient.New(cfg.MQTT)
 	if err != nil {
-		log.Fatal().Err(err).Msg("mqtt connect failed")
+		log.Error().Err(err).Msg("mqtt connect failed")
+		return
 	}
 	defer mqtt.Disconnect()
 
@@ -153,7 +154,7 @@ func pollModem(m *modem.Modem, mqtt *mqttclient.Client) (dbm *int, signalLevel, 
 
 	msg.Status = deriveModemStatus(sim, network, msg.SignalDBm != nil)
 	mqtt.PublishModem(msg)
-	return
+	return dbm, signalLevel, network, sim, operator
 }
 
 func deriveModemStatus(sim, network string, hasSignal bool) string {
@@ -191,24 +192,35 @@ func pollSMS(m *modem.Modem, mqtt *mqttclient.Client, b *bot.Bot, forwardTo stri
 			Body: sms.Body,
 			Time: sms.Time.Format(time.RFC3339),
 		})
-		if reply, ok := b.Reply(sms.From, sms.Body); ok {
-			if err := m.SendSMS(sms.From, reply); err != nil {
-				log.Error().Err(err).Str("to", sms.From).Msg("bot reply failed")
-			} else {
-				log.Info().Str("to", sms.From).Str("reply", reply).Msg("bot reply sent")
-			}
-		} else if forwardTo != "" {
-			body := fmt.Sprintf("From: %s\n%s", sms.From, sms.Body)
-			if err := m.SendSMS(forwardTo, body); err != nil {
-				log.Error().Err(err).Str("to", forwardTo).Msg("forward failed")
-			} else {
-				log.Info().Str("to", forwardTo).Str("from", sms.From).Msg("SMS forwarded")
-			}
+		handleIncoming(m, b, forwardTo, sms)
+		deleteSMS(m, sms.Indices)
+	}
+}
+
+func handleIncoming(m *modem.Modem, b *bot.Bot, forwardTo string, sms modem.SMS) {
+	if reply, ok := b.Reply(sms.From, sms.Body); ok {
+		if err := m.SendSMS(sms.From, reply); err != nil {
+			log.Error().Err(err).Str("to", sms.From).Msg("bot reply failed")
+		} else {
+			log.Info().Str("to", sms.From).Str("reply", reply).Msg("bot reply sent")
 		}
-		for _, idx := range sms.Indices {
-			if err := m.DeleteSMS(idx); err != nil {
-				log.Error().Err(err).Int("index", idx).Msg("delete SMS failed")
-			}
+		return
+	}
+	if forwardTo == "" {
+		return
+	}
+	body := fmt.Sprintf("From: %s\n%s", sms.From, sms.Body)
+	if err := m.SendSMS(forwardTo, body); err != nil {
+		log.Error().Err(err).Str("to", forwardTo).Msg("forward failed")
+	} else {
+		log.Info().Str("to", forwardTo).Str("from", sms.From).Msg("SMS forwarded")
+	}
+}
+
+func deleteSMS(m *modem.Modem, indices []int) {
+	for _, idx := range indices {
+		if err := m.DeleteSMS(idx); err != nil {
+			log.Error().Err(err).Int("index", idx).Msg("delete SMS failed")
 		}
 	}
 }

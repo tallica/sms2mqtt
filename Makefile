@@ -12,6 +12,9 @@ build:
 test:
 	go test ./...
 
+lint:
+	golangci-lint run
+
 build-amd64:
 	GOOS=linux GOARCH=amd64 go build $(LDFLAGS) -o $(BINARY) .
 
@@ -41,4 +44,4 @@ restart:
 status:
 	ssh $(REMOTE) sudo systemctl status $(BINARY)
 
-.PHONY: build test build-amd64 build-arm64 build-arm deploy logs start stop restart status
+.PHONY: build test lint build-amd64 build-arm64 build-arm deploy logs start stop restart status

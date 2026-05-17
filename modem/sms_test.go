@@ -6,6 +6,7 @@ import (
 )
 
 func TestParsePDUList(t *testing.T) {
+	t.Parallel()
 	pdu := "00" + "04" + "0B91" + "1346610089F6" + "00" + "08" +
 		"20806291731480" + "0A" + "00480065006C006C006F"
 
@@ -15,10 +16,7 @@ func TestParsePDUList(t *testing.T) {
 		"+CMGL: 5,1,,33",
 		pdu,
 	}
-	parts, err := parsePDUList(lines)
-	if err != nil {
-		t.Fatal(err)
-	}
+	parts := parsePDUList(lines)
 	if len(parts) != 2 {
 		t.Fatalf("got %d parts, want 2", len(parts))
 	}
@@ -31,6 +29,7 @@ func TestParsePDUList(t *testing.T) {
 }
 
 func TestParsePDUListSkipsBadPDU(t *testing.T) {
+	t.Parallel()
 	lines := []string{
 		"+CMGL: 1,1,,33",
 		"NOTHEX!!",
@@ -38,10 +37,7 @@ func TestParsePDUListSkipsBadPDU(t *testing.T) {
 		"00" + "04" + "0B91" + "1346610089F6" + "00" + "08" +
 			"20806291731480" + "0A" + "00480065006C006C006F",
 	}
-	parts, err := parsePDUList(lines)
-	if err != nil {
-		t.Fatal(err)
-	}
+	parts := parsePDUList(lines)
 	if len(parts) != 1 {
 		t.Fatalf("got %d parts, want 1 (bad PDU should be skipped)", len(parts))
 	}
@@ -51,6 +47,7 @@ func TestParsePDUListSkipsBadPDU(t *testing.T) {
 }
 
 func TestReassembleMultipart_SinglePart(t *testing.T) {
+	t.Parallel()
 	parts := []rawSMSPart{
 		{index: 1, from: "+1", time: time.Unix(100, 0), body: "alone"},
 	}
@@ -64,6 +61,7 @@ func TestReassembleMultipart_SinglePart(t *testing.T) {
 }
 
 func TestReassembleMultipart_Concat(t *testing.T) {
+	t.Parallel()
 	t1 := time.Unix(200, 0)
 	t2 := time.Unix(100, 0)
 	parts := []rawSMSPart{
@@ -87,6 +85,7 @@ func TestReassembleMultipart_Concat(t *testing.T) {
 }
 
 func TestReassembleMultipart_IncompleteHeldBack(t *testing.T) {
+	t.Parallel()
 	parts := []rawSMSPart{
 		{index: 1, from: "+1", time: time.Unix(100, 0), body: "a", concat: &concatInfo{ref: 1, total: 3, part: 1}},
 		{index: 2, from: "+1", time: time.Unix(100, 0), body: "b", concat: &concatInfo{ref: 1, total: 3, part: 2}},
@@ -98,6 +97,7 @@ func TestReassembleMultipart_IncompleteHeldBack(t *testing.T) {
 }
 
 func TestReassembleMultipart_DifferentSendersNotMerged(t *testing.T) {
+	t.Parallel()
 	parts := []rawSMSPart{
 		{index: 1, from: "+1", time: time.Unix(100, 0), body: "x", concat: &concatInfo{ref: 5, total: 2, part: 1}},
 		{index: 2, from: "+2", time: time.Unix(100, 0), body: "y", concat: &concatInfo{ref: 5, total: 2, part: 2}},

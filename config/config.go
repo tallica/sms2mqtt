@@ -1,7 +1,7 @@
 package config
 
 import (
-	"fmt"
+	"errors"
 	"os"
 	"strconv"
 )
@@ -19,10 +19,10 @@ type ModemConfig struct {
 }
 
 type MQTTConfig struct {
-	Broker   string // e.g. tcp://192.168.1.10:1883
-	ClientID string
-	Username string
-	Password string
+	Broker      string // e.g. tcp://192.168.1.10:1883
+	ClientID    string
+	Username    string
+	Password    string
 	TopicInbox  string // publish received SMS here
 	TopicSend   string // subscribe for outgoing SMS
 	TopicStatus string // LWT topic
@@ -51,10 +51,10 @@ func Load() (*Config, error) {
 	cfg.ForwardTo = env("FORWARD_TO", "")
 
 	if cfg.Modem.Device == "" {
-		return nil, fmt.Errorf("MODEM_DEVICE is required")
+		return nil, errors.New("MODEM_DEVICE is required")
 	}
 	if cfg.MQTT.Broker == "" {
-		return nil, fmt.Errorf("MQTT_BROKER is required")
+		return nil, errors.New("MQTT_BROKER is required")
 	}
 
 	return cfg, nil

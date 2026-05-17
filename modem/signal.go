@@ -1,6 +1,7 @@
 package modem
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 )
@@ -13,16 +14,20 @@ func (m *Modem) SignalStrength() (dbm int, ok bool, err error) {
 		return 0, false, err
 	}
 	for _, line := range lines {
-		if strings.HasPrefix(line, "+CSQ:") {
-			var rssi int
-			fmt.Sscanf(strings.TrimSpace(strings.TrimPrefix(line, "+CSQ:")), "%d", &rssi)
-			if rssi == 99 {
-				return 0, false, nil
-			}
-			return -113 + 2*rssi, true, nil
+		rest, found := strings.CutPrefix(line, "+CSQ:")
+		if !found {
+			continue
 		}
+		var rssi int
+		if _, err := fmt.Sscanf(strings.TrimSpace(rest), "%d", &rssi); err != nil {
+			return 0, false, fmt.Errorf("parse +CSQ: %w", err)
+		}
+		if rssi == 99 {
+			return 0, false, nil
+		}
+		return -113 + 2*rssi, true, nil
 	}
-	return 0, false, fmt.Errorf("+CSQ response missing")
+	return 0, false, errors.New("+CSQ response missing")
 }
 
 // SignalLevel maps a dBm value to a human-readable level.
@@ -46,29 +51,31 @@ func (m *Modem) NetworkRegistration() (string, error) {
 		return "unknown", err
 	}
 	for _, line := range lines {
-		if strings.HasPrefix(line, "+CREG:") {
-			parts := strings.TrimSpace(strings.TrimPrefix(line, "+CREG:"))
-			var n, stat int
-			if count, _ := fmt.Sscanf(parts, "%d,%d", &n, &stat); count < 2 {
-				stat = n // single-value response: the value is stat
-			}
-			switch stat {
-			case 1:
-				return "registered", nil
-			case 5:
-				return "roaming", nil
-			case 2:
-				return "searching", nil
-			case 3:
-				return "denied", nil
-			case 0:
-				return "not_registered", nil
-			default:
-				return "unknown", nil
-			}
+		rest, found := strings.CutPrefix(line, "+CREG:")
+		if !found {
+			continue
+		}
+		parts := strings.TrimSpace(rest)
+		var n, stat int
+		if count, _ := fmt.Sscanf(parts, "%d,%d", &n, &stat); count < 2 {
+			stat = n // single-value response: the value is stat
+		}
+		switch stat {
+		case 1:
+			return "registered", nil
+		case 5:
+			return "roaming", nil
+		case 2:
+			return "searching", nil
+		case 3:
+			return "denied", nil
+		case 0:
+			return "not_registered", nil
+		default:
+			return "unknown", nil
 		}
 	}
-	return "unknown", fmt.Errorf("+CREG response missing")
+	return "unknown", errors.New("+CREG response missing")
 }
 
 // Operator queries AT+COPS? and returns the registered operator name.
@@ -79,15 +86,17 @@ func (m *Modem) Operator() (string, error) {
 		return "", err
 	}
 	for _, line := range lines {
-		if strings.HasPrefix(line, "+COPS:") {
-			fields := strings.SplitN(strings.TrimSpace(strings.TrimPrefix(line, "+COPS:")), ",", 4)
-			if len(fields) >= 3 {
-				return strings.Trim(fields[2], `"`), nil
-			}
-			return "", nil // not registered — no operator field
+		rest, found := strings.CutPrefix(line, "+COPS:")
+		if !found {
+			continue
 		}
+		fields := strings.SplitN(strings.TrimSpace(rest), ",", 4)
+		if len(fields) >= 3 {
+			return strings.Trim(fields[2], `"`), nil
+		}
+		return "", nil // not registered — no operator field
 	}
-	return "", fmt.Errorf("+COPS response missing")
+	return "", errors.New("+COPS response missing")
 }
 
 // SIMStatus queries AT+CPIN? and returns the SIM state.
@@ -101,19 +110,20 @@ func (m *Modem) SIMStatus() (string, error) {
 		return "error", err
 	}
 	for _, line := range lines {
-		if strings.HasPrefix(line, "+CPIN:") {
-			state := strings.TrimSpace(strings.TrimPrefix(line, "+CPIN:"))
-			switch state {
-			case "READY":
-				return "ready", nil
-			case "SIM PIN":
-				return "pin_required", nil
-			case "SIM PUK":
-				return "puk_required", nil
-			default:
-				return "error", nil
-			}
+		state, found := strings.CutPrefix(line, "+CPIN:")
+		if !found {
+			continue
+		}
+		switch strings.TrimSpace(state) {
+		case "READY":
+			return "ready", nil
+		case "SIM PIN":
+			return "pin_required", nil
+		case "SIM PUK":
+			return "puk_required", nil
+		default:
+			return "error", nil
 		}
 	}
-	return "error", fmt.Errorf("+CPIN response missing")
+	return "error", errors.New("+CPIN response missing")
 }

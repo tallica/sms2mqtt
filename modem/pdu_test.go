@@ -9,6 +9,7 @@ import (
 )
 
 func TestDecodeBCDAddr(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name      string
 		bcd       string
@@ -24,6 +25,7 @@ func TestDecodeBCDAddr(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			b, err := hex.DecodeString(tt.bcd)
 			if err != nil {
 				t.Fatal(err)
@@ -37,6 +39,7 @@ func TestDecodeBCDAddr(t *testing.T) {
 }
 
 func TestDecodeSCTS(t *testing.T) {
+	t.Parallel()
 	// Year=02, Mon=08, Day=26, Hr=19, Min=37, Sec=41, TZ=+02:00 (8 quarters).
 	// Stored with semi-octet swap: 20 80 62 91 73 14 80.
 	b, _ := hex.DecodeString("20806291731480")
@@ -52,6 +55,7 @@ func TestDecodeSCTS(t *testing.T) {
 }
 
 func TestDecodeSCTSNegativeTZ(t *testing.T) {
+	t.Parallel()
 	// TZ -05:00 = 20 quarters. Digits "2","0", stored swapped = 0x02, sign bit set in
 	// high nibble (0x08 mask on stored low-nibble bit-3): 0x02 | 0x08 = 0x0A.
 	b, _ := hex.DecodeString("2080629173140A")
@@ -63,7 +67,9 @@ func TestDecodeSCTSNegativeTZ(t *testing.T) {
 }
 
 func TestParseUDH(t *testing.T) {
+	t.Parallel()
 	t.Run("IEI 0x00 8-bit ref", func(t *testing.T) {
+		t.Parallel()
 		// IEI=00, IEDL=03, ref=AA, total=03, part=02
 		udh, _ := hex.DecodeString("0003AA0302")
 		got := parseUDH(udh)
@@ -76,6 +82,7 @@ func TestParseUDH(t *testing.T) {
 	})
 
 	t.Run("IEI 0x08 16-bit ref", func(t *testing.T) {
+		t.Parallel()
 		// IEI=08, IEDL=04, ref=1234, total=04, part=03
 		udh, _ := hex.DecodeString("080412340403")
 		got := parseUDH(udh)
@@ -88,6 +95,7 @@ func TestParseUDH(t *testing.T) {
 	})
 
 	t.Run("non-concat IE skipped", func(t *testing.T) {
+		t.Parallel()
 		// Unknown IEI 0x0A with 2 bytes, then concat 8-bit IE.
 		udh, _ := hex.DecodeString("0A02FFFF0003AA0201")
 		got := parseUDH(udh)
@@ -97,6 +105,7 @@ func TestParseUDH(t *testing.T) {
 	})
 
 	t.Run("no concat returns nil", func(t *testing.T) {
+		t.Parallel()
 		udh, _ := hex.DecodeString("0A02FFFF")
 		if got := parseUDH(udh); got != nil {
 			t.Errorf("expected nil, got %+v", got)
@@ -104,6 +113,7 @@ func TestParseUDH(t *testing.T) {
 	})
 
 	t.Run("truncated IE", func(t *testing.T) {
+		t.Parallel()
 		udh, _ := hex.DecodeString("0005AA")
 		if got := parseUDH(udh); got != nil {
 			t.Errorf("expected nil for truncated UDH, got %+v", got)
@@ -112,6 +122,7 @@ func TestParseUDH(t *testing.T) {
 }
 
 func TestDecodeGSM7Hello(t *testing.T) {
+	t.Parallel()
 	// "hello" packed: E8329BFD06 (5 septets, no fill bits).
 	b, _ := hex.DecodeString("E8329BFD06")
 	got := decodeGSM7(b, 5, 0)
@@ -121,6 +132,7 @@ func TestDecodeGSM7Hello(t *testing.T) {
 }
 
 func TestDecodeGSM7WithFillBits(t *testing.T) {
+	t.Parallel()
 	// Build "hi" (2 septets) with 1 fill bit prefix to simulate UDH alignment.
 	// Septets: 'h'=0x68, 'i'=0x69. With 1 fill bit:
 	// bit positions 1..7 hold first septet 0x68, bits 8..14 second septet 0x69.
@@ -135,6 +147,7 @@ func TestDecodeGSM7WithFillBits(t *testing.T) {
 }
 
 func TestDecodeGSM7Extension(t *testing.T) {
+	t.Parallel()
 	// ESC (0x1B) followed by '€' code 0x65. Two septets.
 	// pack: byte0 = 0x1B | (0x65 << 7) & 0xFF = 0x1B | 0x80 = 0x9B
 	//       byte1 = 0x65 >> 1 = 0x32
@@ -145,6 +158,7 @@ func TestDecodeGSM7Extension(t *testing.T) {
 }
 
 func TestDecodeUCS2Bytes(t *testing.T) {
+	t.Parallel()
 	// "Héllo" in UTF-16BE.
 	b := []byte{0x00, 'H', 0x00, 0xE9, 0x00, 'l', 0x00, 'l', 0x00, 'o'}
 	got := decodeUCS2Bytes(b)
@@ -154,6 +168,7 @@ func TestDecodeUCS2Bytes(t *testing.T) {
 }
 
 func TestDecodeUCS2BytesSurrogatePair(t *testing.T) {
+	t.Parallel()
 	// 🙂 U+1F642 → surrogates D83D DE42.
 	b := []byte{0xD8, 0x3D, 0xDE, 0x42}
 	got := decodeUCS2Bytes(b)
@@ -163,6 +178,7 @@ func TestDecodeUCS2BytesSurrogatePair(t *testing.T) {
 }
 
 func TestDecodeUCS2BytesOddLength(t *testing.T) {
+	t.Parallel()
 	b := []byte{0x00, 'A', 0x00}
 	got := decodeUCS2Bytes(b)
 	if got != "A" {
@@ -171,6 +187,7 @@ func TestDecodeUCS2BytesOddLength(t *testing.T) {
 }
 
 func TestDecodeSMSDeliverPDU_UCS2(t *testing.T) {
+	t.Parallel()
 	// Hand-crafted SMS-DELIVER:
 	//   00              SMSC length 0
 	//   04              first octet (SMS-DELIVER, no UDH)
@@ -180,9 +197,7 @@ func TestDecodeSMSDeliverPDU_UCS2(t *testing.T) {
 	//   20 80 62 91 73 14 80   SCTS: 2002-08-26 19:37:41 +02:00
 	//   0A              UDL: 10 bytes
 	//   00 48 00 65 00 6C 00 6C 00 6F   "Hello" UCS-2BE
-	pdu := "00040B911346610089F600082080629173148000A00480065006C006C006F"
-	// Re-build cleanly to avoid typos.
-	pdu = "00" + "04" + "0B91" + "1346610089F6" + "00" + "08" +
+	pdu := "00" + "04" + "0B91" + "1346610089F6" + "00" + "08" +
 		"20806291731480" + "0A" + "00480065006C006C006F"
 
 	part, err := decodeSMSDeliverPDU(pdu, 7)
@@ -208,6 +223,7 @@ func TestDecodeSMSDeliverPDU_UCS2(t *testing.T) {
 }
 
 func TestDecodeSMSDeliverPDU_GSM7(t *testing.T) {
+	t.Parallel()
 	// SMS-DELIVER with GSM-7 "hello".
 	//   00 04 0B 91 1346610089F6 00 00 (DCS=0)
 	//   SCTS, UDL=5, UD = packed "hello" = E8329BFD06
@@ -224,6 +240,7 @@ func TestDecodeSMSDeliverPDU_GSM7(t *testing.T) {
 }
 
 func TestDecodeSMSDeliverPDU_AlphanumericSender(t *testing.T) {
+	t.Parallel()
 	// OA: length=07, TON=D0 (alphanumeric), data=5076380F → "Play"
 	pdu := "00" + "04" + "07D0" + "5076380F" + "00" + "00" +
 		"20806291731480" + "05" + "E8329BFD06"
@@ -241,6 +258,7 @@ func TestDecodeSMSDeliverPDU_AlphanumericSender(t *testing.T) {
 }
 
 func TestDecodeSMSDeliverPDU_GSM7WithUDH(t *testing.T) {
+	t.Parallel()
 	// SMS-DELIVER GSM-7 multipart with concat UDH.
 	// First octet 0x44 = SMS-DELIVER + UDHI.
 	// UDH: 05 (length) 00 03 AA 02 01 → 6 bytes total including length byte.
@@ -265,18 +283,21 @@ func TestDecodeSMSDeliverPDU_GSM7WithUDH(t *testing.T) {
 }
 
 func TestDecodeSMSDeliverPDU_Truncated(t *testing.T) {
+	t.Parallel()
 	if _, err := decodeSMSDeliverPDU("00", 0); err == nil {
 		t.Error("expected error on truncated PDU")
 	}
 }
 
 func TestDecodeSMSDeliverPDU_BadHex(t *testing.T) {
+	t.Parallel()
 	if _, err := decodeSMSDeliverPDU("ZZ", 0); err == nil {
 		t.Error("expected hex decode error")
 	}
 }
 
 func TestEncodeAddress(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name   string
 		number string
@@ -290,6 +311,7 @@ func TestEncodeAddress(t *testing.T) {
 	// Compute expected dynamically rather than maintain typo-prone hex literals.
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			got, err := encodeAddress(tt.number)
 			if err != nil {
 				t.Fatal(err)
@@ -300,9 +322,6 @@ func TestEncodeAddress(t *testing.T) {
 			bcd := got[2:]
 			back := decodeBCDAddr(bcd, ton, int(oaLen))
 			want := tt.number
-			if !strings.HasPrefix(want, "+") {
-				// non-+ numbers come back without '+'
-			}
 			if back != want {
 				t.Errorf("roundtrip = %q, want %q", back, want)
 			}
@@ -311,6 +330,7 @@ func TestEncodeAddress(t *testing.T) {
 }
 
 func TestEncodeAddressInvalid(t *testing.T) {
+	t.Parallel()
 	if _, err := encodeAddress(""); err == nil {
 		t.Error("expected error for empty number")
 	}
@@ -320,6 +340,7 @@ func TestEncodeAddressInvalid(t *testing.T) {
 }
 
 func TestEncodeUCS2Roundtrip(t *testing.T) {
+	t.Parallel()
 	cases := []string{
 		"Hello",
 		"Zażółć gęślą jaźń",
@@ -328,6 +349,7 @@ func TestEncodeUCS2Roundtrip(t *testing.T) {
 	}
 	for _, s := range cases {
 		t.Run(s, func(t *testing.T) {
+			t.Parallel()
 			b := encodeUCS2(s)
 			got := decodeUCS2Bytes(b)
 			if got != s {
@@ -338,6 +360,7 @@ func TestEncodeUCS2Roundtrip(t *testing.T) {
 }
 
 func TestSplitUCS2NoSurrogateSplit(t *testing.T) {
+	t.Parallel()
 	// Build a string where naive split would land mid-surrogate-pair.
 	// 33 ASCII chars (66 bytes) + emoji 🙂 (4 bytes) → 70 bytes total.
 	// maxBytes=68 would split inside the 4-byte emoji at byte 68 (between hi and lo surrogate).
@@ -370,6 +393,7 @@ func TestSplitUCS2NoSurrogateSplit(t *testing.T) {
 }
 
 func TestSplitUCS2NoSplitNeeded(t *testing.T) {
+	t.Parallel()
 	b := encodeUCS2("short")
 	parts := splitUCS2(b, 134)
 	if len(parts) != 1 {
@@ -378,6 +402,7 @@ func TestSplitUCS2NoSplitNeeded(t *testing.T) {
 }
 
 func TestBuildPDUsSinglePart(t *testing.T) {
+	t.Parallel()
 	pdus, ns, err := buildPDUs("+48123456789", "Hello")
 	if err != nil {
 		t.Fatal(err)
@@ -397,6 +422,7 @@ func TestBuildPDUsSinglePart(t *testing.T) {
 }
 
 func TestBuildPDUsMultipart(t *testing.T) {
+	t.Parallel()
 	// 71 chars = 142 UCS-2 bytes > 140 → multipart.
 	body := strings.Repeat("a", 71)
 	pdus, ns, err := buildPDUs("+48123456789", body)
@@ -429,9 +455,9 @@ func TestBuildPDUsMultipart(t *testing.T) {
 		_, _ = r.readByte() // first octet
 		_, _ = r.readByte() // MR
 		daLen, _ := r.readByte()
-		_, _ = r.readByte()                          // TON
-		_, _ = r.readN((int(daLen) + 1) / 2)         // BCD
-		_, _ = r.readByte()                           // PID
+		_, _ = r.readByte()                  // TON
+		_, _ = r.readN((int(daLen) + 1) / 2) // BCD
+		_, _ = r.readByte()                  // PID
 		dcs, _ := r.readByte()
 		if dcs != 0x08 {
 			t.Errorf("part %d DCS = 0x%02X, want 0x08", i, dcs)
@@ -459,7 +485,7 @@ func TestBuildPDUsMultipart(t *testing.T) {
 		if refs[i] != refs[0] {
 			t.Errorf("ref mismatch at %d: %d vs %d", i, refs[i], refs[0])
 		}
-		if totals[i] != byte(len(pdus)) {
+		if totals[i] != byte(len(pdus)&0xFF) {
 			t.Errorf("total mismatch at %d: %d", i, totals[i])
 		}
 	}
@@ -469,6 +495,7 @@ func TestBuildPDUsMultipart(t *testing.T) {
 }
 
 func TestBuildPDUsAtBoundary(t *testing.T) {
+	t.Parallel()
 	// 70 UCS-2 chars = 140 bytes → single-part (boundary).
 	body := strings.Repeat("x", 70)
 	pdus, _, err := buildPDUs("+48123456789", body)
@@ -481,6 +508,7 @@ func TestBuildPDUsAtBoundary(t *testing.T) {
 }
 
 func TestBuildPDUsInvalidNumber(t *testing.T) {
+	t.Parallel()
 	if _, _, err := buildPDUs("notanumber", "x"); err == nil {
 		t.Error("expected error for invalid number")
 	}
@@ -488,13 +516,14 @@ func TestBuildPDUsInvalidNumber(t *testing.T) {
 
 // Sanity check: utf16 round-trip helper used in tests matches encodeUCS2.
 func TestEncodeUCS2MatchesUTF16BE(t *testing.T) {
+	t.Parallel()
 	s := "🙂a"
 	got := encodeUCS2(s)
 	u16 := utf16.Encode([]rune(s))
 	want := make([]byte, len(u16)*2)
 	for i, v := range u16 {
 		want[i*2] = byte(v >> 8)
-		want[i*2+1] = byte(v)
+		want[i*2+1] = byte(v & 0xFF)
 	}
 	if string(got) != string(want) {
 		t.Errorf("encodeUCS2 mismatch")

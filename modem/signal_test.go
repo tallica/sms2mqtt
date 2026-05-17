@@ -3,6 +3,7 @@ package modem
 import "testing"
 
 func TestSignalLevel(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		dbm  int
 		want string

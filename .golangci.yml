@@ -1,0 +1,101 @@
+version: "2"
+
+run:
+  timeout: 3m
+  tests: true
+  relative-path-mode: cfg
+
+linters:
+  default: standard
+  enable:
+    # correctness
+    - govet
+    - staticcheck
+    - errcheck
+    - errorlint
+    - bodyclose
+    - gosec
+    - errchkjson
+    - nilerr
+    - forcetypeassert
+    - wastedassign
+    - copyloopvar
+    # maintainability
+    - ineffassign
+    - unparam
+    - unused
+    - unconvert
+    - gocognit
+    - zerologlint
+    # consistency & style
+    - revive
+    - gocritic
+    - misspell
+    - modernize
+    - perfsprint
+    - nolintlint
+    - usestdlibvars
+    # test hygiene
+    - paralleltest
+    - thelper
+
+  exclusions:
+    presets:
+      - comments
+      - std-error-handling
+      - common-false-positives
+      - legacy
+    rules:
+      - linters: [dupword]
+        path: web\.go
+      - linters: [gocognit]
+        path: _test\.go
+
+  settings:
+    govet:
+      enable-all: true
+      disable:
+        - fieldalignment
+
+    revive:
+      severity: warning
+      rules:
+        - name: var-naming
+        - name: early-return
+        - name: indent-error-flow
+        - name: superfluous-else
+        - name: bare-return
+          severity: error
+
+    gocritic:
+      enabled-checks:
+        - rangeValCopy
+        - builtinShadow
+        - paramTypeCombine
+
+    gosec:
+      excludes:
+        - G104
+
+    gocognit:
+      min-complexity: 15
+
+    errchkjson:
+      check-error-free-encoding: false
+
+    nolintlint:
+      require-explanation: false
+      allow-unused: false
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    gofmt:
+      simplify: true
+    goimports: {}
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
