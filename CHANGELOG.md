@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.6] - 2026-05-17
+
+### Changed
+
+- Added `golangci-lint` configuration (`.golangci.yml`), `make lint` target, and a `lint` job in the GitHub Actions workflow. Fixed all reported offences across the codebase.
+
 ## [0.7.5] - 2026-05-10
 
 ### Fixed
@@ -170,7 +176,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - systemd unit file with `dialout` group for serial port access
 - `.env.example` template
 
-[Unreleased]: https://github.com/tallica/sms2mqtt/compare/v0.7.5...HEAD
+[Unreleased]: https://github.com/tallica/sms2mqtt/compare/v0.7.6...HEAD
+[0.7.6]: https://github.com/tallica/sms2mqtt/compare/v0.7.5...v0.7.6
 [0.7.5]: https://github.com/tallica/sms2mqtt/compare/v0.7.4...v0.7.5
 [0.7.4]: https://github.com/tallica/sms2mqtt/compare/v0.7.3...v0.7.4
 [0.7.3]: https://github.com/tallica/sms2mqtt/compare/v0.7.2...v0.7.3
