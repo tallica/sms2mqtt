@@ -11,13 +11,14 @@ Development is on macOS; the service runs on a remote Linux host over SSH.
 ```bash
 make build                  # compile check (macOS)
 make test                   # run unit tests
+make lint                   # run golangci-lint
 make deploy                 # cross-compile linux/arm64 + scp to $REMOTE:/usr/local/bin/sms2mqtt
 make deploy ARCH=amd64      # x86-64 target
 make deploy ARCH=arm        # Pi 4 32-bit OS
 make restart && make logs   # restart service and tail logs
 ```
 
-Set `REMOTE=user@host` in the shell before using `make`. Default `ARCH` is `arm64` (Raspberry Pi 4 64-bit). Available targets: `build`, `test`, `build-arm64`, `build-arm`, `build-amd64`, `deploy`, `start`, `stop`, `restart`, `status`, `logs`.
+Set `REMOTE=user@host` in the shell before using `make`. Default `ARCH` is `arm64` (Raspberry Pi 4 64-bit). Available targets: `build`, `test`, `lint`, `build-arm64`, `build-arm`, `build-amd64`, `deploy`, `start`, `stop`, `restart`, `status`, `logs`.
 
 macOS cannot run the service directly — the Huawei E3272 requires the Linux `option` kernel module to expose a serial port.
 
@@ -87,6 +88,7 @@ Bot-handled messages are never forwarded. Add new commands in `bot/bot.go`.
 - Pure-logic helpers in the `modem` package (PDU codec, multipart reassembly, signal-level mapping) have unit tests in `modem/pdu_test.go`. Hardware-tied paths (serial I/O, AT command exchange) have no mocks — test those against a real device or a pty.
 - Keep `main.go` as a wiring layer only — no business logic.
 - Update `CHANGELOG.md` under `## [Unreleased]` for every notable change.
+- Run `make lint` before committing — CI enforces `golangci-lint` per `.golangci.yml`.
 
 ## Deployment
 
