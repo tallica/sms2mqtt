@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Documentation
 
-- Added udev rule for a stable `/dev/modemGSM` symlink targeting the AT command port (`ID_USB_INTERFACE_NUM=="00"`), avoiding dynamic `ttyUSBx` numbering.
+- Added udev rules creating `/dev/modemGSM_at` (AT command port, interface `01`) and `/dev/modemGSM_ppp` (PPP data port, interface `00`) symlinks, avoiding dynamic `ttyUSBx` numbering. The two interfaces are independent and can be used simultaneously.
 
 ## [0.7.6] - 2026-05-17
 

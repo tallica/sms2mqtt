@@ -117,16 +117,25 @@ Bot-handled messages are never forwarded via `FORWARD_TO`.
 
 ### Stable device symlink (udev)
 
-The kernel assigns `ttyUSBx` numbers dynamically. Create a persistent symlink so `MODEM_DEVICE` never needs updating:
+The kernel assigns `ttyUSBx` numbers dynamically. Create persistent symlinks for both interfaces:
 
 ```bash
-echo 'SUBSYSTEM=="tty", ENV{ID_VENDOR_ID}=="12d1", ENV{ID_MODEL_ID}=="1506", ENV{ID_USB_INTERFACE_NUM}=="00", SYMLINK+="modemGSM"' \
-  | sudo tee /etc/udev/rules.d/99-modemGSM.rules
+cat <<'EOF' | sudo tee /etc/udev/rules.d/99-modemGSM.rules
+SUBSYSTEM=="tty", ENV{ID_VENDOR_ID}=="12d1", ENV{ID_MODEL_ID}=="1506", ENV{ID_USB_INTERFACE_NUM}=="00", SYMLINK+="modemGSM_ppp"
+SUBSYSTEM=="tty", ENV{ID_VENDOR_ID}=="12d1", ENV{ID_MODEL_ID}=="1506", ENV{ID_USB_INTERFACE_NUM}=="01", SYMLINK+="modemGSM_at"
+EOF
 sudo udevadm control --reload-rules
 sudo udevadm trigger --action=add --subsystem-match=tty
 ```
 
-The E3272 exposes two TTY interfaces; `ID_USB_INTERFACE_NUM=="00"` selects the AT command port. After applying the rule, set `MODEM_DEVICE=/dev/modemGSM` in `/etc/sms2mqtt/env`.
+The E3272 exposes two TTY interfaces:
+
+| Symlink | Interface | Purpose |
+|---|---|---|
+| `/dev/modemGSM_at` | `01` | AT commands — used by `sms2mqtt` |
+| `/dev/modemGSM_ppp` | `00` | PPP data — used by `wvdial` / internet |
+
+Set `MODEM_DEVICE=/dev/modemGSM_at` in `/etc/sms2mqtt/env`. The two interfaces are independent and can be used simultaneously.
 
 ### First-time service install
 
