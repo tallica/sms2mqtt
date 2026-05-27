@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.7] - 2026-05-27
+
 ### Documentation
 
 - Added udev rule for a stable `/dev/modemGSM` symlink targeting the AT command port (`ID_USB_INTERFACE_NUM=="00"`), avoiding dynamic `ttyUSBx` numbering.
@@ -180,7 +182,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - systemd unit file with `dialout` group for serial port access
 - `.env.example` template
 
-[Unreleased]: https://github.com/tallica/sms2mqtt/compare/v0.7.6...HEAD
+[Unreleased]: https://github.com/tallica/sms2mqtt/compare/v0.7.7...HEAD
+[0.7.7]: https://github.com/tallica/sms2mqtt/compare/v0.7.6...v0.7.7
 [0.7.6]: https://github.com/tallica/sms2mqtt/compare/v0.7.5...v0.7.6
 [0.7.5]: https://github.com/tallica/sms2mqtt/compare/v0.7.4...v0.7.5
 [0.7.4]: https://github.com/tallica/sms2mqtt/compare/v0.7.3...v0.7.4
