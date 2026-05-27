@@ -15,7 +15,7 @@ Bridge between a Huawei E3272s-153 USB modem and Home Assistant via MQTT.
 
 ## Requirements
 
-- Linux host with Huawei E3272 visible as `/dev/ttyUSB0`
+- Linux host with Huawei E3272 connected (use the udev rule below for a stable `/dev/modemGSM` symlink)
 - MQTT broker (e.g. Mosquitto bundled with Home Assistant)
 - Go 1.21+ (build only)
 
@@ -114,6 +114,19 @@ Send these as an SMS to the modem's number:
 Bot-handled messages are never forwarded via `FORWARD_TO`.
 
 ## Linux host setup
+
+### Stable device symlink (udev)
+
+The kernel assigns `ttyUSBx` numbers dynamically. Create a persistent symlink so `MODEM_DEVICE` never needs updating:
+
+```bash
+echo 'SUBSYSTEM=="tty", ENV{ID_VENDOR_ID}=="12d1", ENV{ID_MODEL_ID}=="1506", ENV{ID_USB_INTERFACE_NUM}=="00", SYMLINK+="modemGSM"' \
+  | sudo tee /etc/udev/rules.d/99-modemGSM.rules
+sudo udevadm control --reload-rules
+sudo udevadm trigger --action=add --subsystem-match=tty
+```
+
+The E3272 exposes two TTY interfaces; `ID_USB_INTERFACE_NUM=="00"` selects the AT command port. After applying the rule, set `MODEM_DEVICE=/dev/modemGSM` in `/etc/sms2mqtt/env`.
 
 ### First-time service install
 
