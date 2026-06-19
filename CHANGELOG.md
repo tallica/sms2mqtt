@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.8] - 2026-06-19
+
 ### Fixed
 
 - MQTT client now reconnects automatically when the broker is unavailable at startup. Subscribe and online-status publish are moved into `OnConnectHandler`, which fires on every (re)connect, so the service no longer exits if the broker isn't ready yet.
@@ -187,7 +189,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - systemd unit file with `dialout` group for serial port access
 - `.env.example` template
 
-[Unreleased]: https://github.com/tallica/sms2mqtt/compare/v0.7.7...HEAD
+[Unreleased]: https://github.com/tallica/sms2mqtt/compare/v0.7.8...HEAD
+[0.7.8]: https://github.com/tallica/sms2mqtt/compare/v0.7.7...v0.7.8
 [0.7.7]: https://github.com/tallica/sms2mqtt/compare/v0.7.6...v0.7.7
 [0.7.6]: https://github.com/tallica/sms2mqtt/compare/v0.7.5...v0.7.6
 [0.7.5]: https://github.com/tallica/sms2mqtt/compare/v0.7.4...v0.7.5
