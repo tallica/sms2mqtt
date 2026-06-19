@@ -35,7 +35,7 @@ macOS cannot run the service directly — the Huawei E3272 requires the Linux `o
 | `modem` | `modem/pdu_test.go` | Unit tests for PDU encode/decode (GSM-7, UCS-2, UDH, BCD, SCTS, multipart split) |
 | `modem` | `modem/sms_test.go` | Unit tests for `parsePDUList` and `reassembleMultipart` |
 | `modem` | `modem/signal_test.go` | Unit tests for `SignalLevel` |
-| `mqttclient` | `mqttclient/client.go` | Paho wrapper — LWT, publish inbox, send channel |
+| `mqttclient` | `mqttclient/client.go` | Paho wrapper — LWT, fire-and-forget publish, send channel; `New()` is non-blocking (broker connect retried in background) |
 | `config` | `config/config.go` | All config from env vars with defaults |
 
 ## Modem notes
@@ -46,7 +46,7 @@ macOS cannot run the service directly — the Huawei E3272 requires the Linux `o
 - **Read mode**: switches to PDU mode (`AT+CMGF=0`) per poll to read raw PDUs via `AT+CMGL=4`. This allows UDH (User Data Header) parsing for multipart SMS reassembly, and correct decoding of alphanumeric sender addresses (TON=0xD0, packed GSM-7). Text mode is restored immediately after listing. Multipart segments arriving in the same poll are reassembled into one message; incomplete groups are left on the modem for the next poll.
 - **Send mode**: PDU mode (`AT+CMGF=0`) with UCS-2 encoding, switched per send and restored after. Supports emoji and full Unicode.
 - **Push notifications disabled**: `AT+CNMI=0,0,0,0,0` — the service polls instead of reacting to unsolicited result codes.
-- **Delete on read**: all modem storage indices belonging to a message (one for single-part, all parts for multipart) are deleted after successful MQTT publish to avoid re-delivery.
+- **Delete on read**: all modem storage indices belonging to a message (one for single-part, all parts for multipart) are deleted after the MQTT publish is dispatched (fire-and-forget) to avoid re-delivery.
 
 ## MQTT topics
 

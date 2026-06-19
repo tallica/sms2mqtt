@@ -9,6 +9,7 @@ Bridge between a Huawei E3272s-153 USB modem and Home Assistant via MQTT.
 - Publishes modem telemetry to `sms2mqtt/modem` each poll cycle (status, network, SIM, signal)
 - Forwards incoming SMS to a phone number (`FORWARD_TO`)
 - Built-in bot commands: `ping`, `version`, `status`
+- Resilient to MQTT broker restarts: retries the initial connection and reconnects automatically mid-run; SMS processing and bot replies continue via the modem regardless of broker availability
 
 > **⚠️ AI-assisted project**  
 > This codebase was built with [Claude Code](https://claude.ai/code). It works for the author's specific setup but has not been independently audited. Review the code before running it in any security-sensitive or production environment.
