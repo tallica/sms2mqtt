@@ -95,8 +95,15 @@ func (c *Client) PublishInbox(msg InboxMessage) {
 		log.Error().Err(err).Msg("marshal inbox message")
 		return
 	}
-	c.publish(c.cfg.TopicInbox, string(payload), false)
-	log.Info().Str("from", msg.From).Msg("published SMS to MQTT")
+	from := msg.From
+	go func() {
+		token := c.c.Publish(c.cfg.TopicInbox, 1, false, string(payload))
+		if !token.WaitTimeout(5 * time.Second) {
+			log.Warn().Str("topic", c.cfg.TopicInbox).Msg("mqtt publish timeout")
+			return
+		}
+		log.Info().Str("from", from).Msg("published SMS to MQTT")
+	}()
 }
 
 // PublishModem publishes modem state to the modem topic (retained).
@@ -109,15 +116,21 @@ func (c *Client) PublishModem(msg ModemMessage) {
 	c.publish(c.cfg.TopicModem, string(payload), true)
 }
 
+// publish is fire-and-forget so the poll loop is never blocked by MQTT state.
 func (c *Client) publish(topic, payload string, retain bool) {
-	token := c.c.Publish(topic, 1, retain, payload)
-	if !token.WaitTimeout(5 * time.Second) {
-		log.Warn().Str("topic", topic).Msg("mqtt publish timeout")
-	}
+	go func() {
+		token := c.c.Publish(topic, 1, retain, payload)
+		if !token.WaitTimeout(5 * time.Second) {
+			log.Warn().Str("topic", topic).Msg("mqtt publish timeout")
+		}
+	}()
 }
 
 func (c *Client) Disconnect() {
-	c.publish(c.cfg.TopicStatus, "offline", true)
-	c.PublishModem(ModemMessage{Status: "offline"})
+	// Publish offline status synchronously so it lands before the connection closes.
+	c.c.Publish(c.cfg.TopicStatus, 1, true, "offline").WaitTimeout(2 * time.Second)
+	if payload, err := json.Marshal(ModemMessage{Status: "offline"}); err == nil {
+		c.c.Publish(c.cfg.TopicModem, 1, true, string(payload)).WaitTimeout(2 * time.Second)
+	}
 	c.c.Disconnect(500)
 }

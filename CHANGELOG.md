@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - MQTT client now reconnects automatically when the broker is unavailable at startup. Subscribe and online-status publish are moved into `OnConnectHandler`, which fires on every (re)connect, so the service no longer exits if the broker isn't ready yet.
+- All MQTT publishes in the poll loop are now fire-and-forget (goroutines). The poll loop is never blocked by MQTT state, so SMS are processed and bot commands are handled regardless of broker availability.
 
 ## [0.7.7] - 2026-05-27
 
