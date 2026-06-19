@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- MQTT client now reconnects automatically when the broker is unavailable at startup. Subscribe and online-status publish are moved into `OnConnectHandler`, which fires on every (re)connect, so the service no longer exits if the broker isn't ready yet.
+
 ## [0.7.7] - 2026-05-27
 
 ### Documentation

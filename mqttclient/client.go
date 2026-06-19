@@ -2,7 +2,6 @@ package mqttclient
 
 import (
 	"encoding/json"
-	"fmt"
 	"time"
 
 	paho "github.com/eclipse/paho.mqtt.golang"
@@ -38,7 +37,12 @@ type ModemMessage struct {
 	Roaming     *bool  `json:"roaming,omitempty"`
 }
 
-func New(cfg config.MQTTConfig) (*Client, error) {
+func New(cfg config.MQTTConfig) *Client {
+	client := &Client{
+		cfg:    cfg,
+		sendCh: make(chan SendRequest, 16),
+	}
+
 	opts := paho.NewClientOptions().
 		AddBroker(cfg.Broker).
 		SetClientID(cfg.ClientID).
@@ -48,6 +52,23 @@ func New(cfg config.MQTTConfig) (*Client, error) {
 		SetConnectRetryInterval(5 * time.Second).
 		SetOnConnectHandler(func(c paho.Client) {
 			log.Info().Str("broker", cfg.Broker).Msg("MQTT connected")
+			token := c.Publish(cfg.TopicStatus, 1, true, "online")
+			if !token.WaitTimeout(5 * time.Second) {
+				log.Warn().Str("topic", cfg.TopicStatus).Msg("mqtt publish timeout")
+			}
+			token = c.Subscribe(cfg.TopicSend, 1, func(_ paho.Client, msg paho.Message) {
+				var req SendRequest
+				if err := json.Unmarshal(msg.Payload(), &req); err != nil {
+					log.Error().Err(err).Msg("invalid send payload")
+					return
+				}
+				client.sendCh <- req
+			})
+			if token.WaitTimeout(5*time.Second) && token.Error() != nil {
+				log.Error().Err(token.Error()).Msg("mqtt subscribe failed")
+				return
+			}
+			log.Info().Str("topic", cfg.TopicSend).Msg("subscribed for outbound SMS")
 		}).
 		SetConnectionLostHandler(func(c paho.Client, err error) {
 			log.Warn().Err(err).Msg("MQTT connection lost")
@@ -57,35 +78,9 @@ func New(cfg config.MQTTConfig) (*Client, error) {
 		opts.SetUsername(cfg.Username).SetPassword(cfg.Password)
 	}
 
-	client := &Client{
-		cfg:    cfg,
-		sendCh: make(chan SendRequest, 16),
-	}
-
-	c := paho.NewClient(opts)
-	if token := c.Connect(); token.WaitTimeout(10*time.Second) && token.Error() != nil {
-		return nil, fmt.Errorf("mqtt connect: %w", token.Error())
-	}
-	client.c = c
-
-	// Mark bridge as online
-	client.publish(cfg.TopicStatus, "online", true)
-
-	// Subscribe to outbound send topic
-	token := c.Subscribe(cfg.TopicSend, 1, func(_ paho.Client, msg paho.Message) {
-		var req SendRequest
-		if err := json.Unmarshal(msg.Payload(), &req); err != nil {
-			log.Error().Err(err).Msg("invalid send payload")
-			return
-		}
-		client.sendCh <- req
-	})
-	if token.WaitTimeout(5*time.Second) && token.Error() != nil {
-		return nil, fmt.Errorf("mqtt subscribe: %w", token.Error())
-	}
-
-	log.Info().Str("topic", cfg.TopicSend).Msg("subscribed for outbound SMS")
-	return client, nil
+	client.c = paho.NewClient(opts)
+	client.c.Connect()
+	return client
 }
 
 // SendRequests returns a channel of outgoing SMS requests from MQTT.

@@ -37,11 +37,7 @@ func main() {
 	log.Info().Msg("modem ready")
 
 	log.Info().Str("broker", cfg.MQTT.Broker).Msg("connecting to MQTT")
-	mqtt, err := mqttclient.New(cfg.MQTT)
-	if err != nil {
-		log.Error().Err(err).Msg("mqtt connect failed")
-		return
-	}
+	mqtt := mqttclient.New(cfg.MQTT)
 	defer mqtt.Disconnect()
 
 	ticker := time.NewTicker(time.Duration(cfg.Modem.PollSeconds) * time.Second)
