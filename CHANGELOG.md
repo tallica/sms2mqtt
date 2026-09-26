@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `make audit` runs `govulncheck` to report reachable vulnerabilities; a `vuln` CI workflow runs it on push, pull requests, and weekly.
 - Dependabot keeps Go modules and GitHub Actions current with weekly grouped updates.
 
+### Security
+
+- Go toolchain bumped to 1.26.8 (reachable stdlib vulnerabilities in `net`, `net/textproto`, `crypto/tls`, `crypto/x509`, `encoding/asn1`); `golang.org/x/net` to v0.59.0 and `golang.org/x/sys` to v0.48.0.
+
 ## [0.7.8] - 2026-06-19
 
 ### Fixed
