@@ -12,13 +12,14 @@ Development is on macOS; the service runs on a remote Linux host over SSH.
 make build                  # compile check (macOS)
 make test                   # run unit tests
 make lint                   # run golangci-lint
+make audit                  # govulncheck: reachable vulnerabilities; CI runs it weekly too
 make deploy                 # cross-compile linux/arm64 + scp to $REMOTE:/usr/local/bin/sms2mqtt
 make deploy ARCH=amd64      # x86-64 target
 make deploy ARCH=arm        # Pi 4 32-bit OS
 make restart && make logs   # restart service and tail logs
 ```
 
-Set `REMOTE=user@host` in the shell before using `make`. Default `ARCH` is `arm64` (Raspberry Pi 4 64-bit). Available targets: `build`, `test`, `lint`, `build-arm64`, `build-arm`, `build-amd64`, `deploy`, `start`, `stop`, `restart`, `status`, `logs`.
+Set `REMOTE=user@host` in the shell before using `make`. Default `ARCH` is `arm64` (Raspberry Pi 4 64-bit). Available targets: `build`, `test`, `lint`, `audit`, `build-arm64`, `build-arm`, `build-amd64`, `deploy`, `start`, `stop`, `restart`, `status`, `logs`.
 
 macOS cannot run the service directly — the Huawei E3272 requires the Linux `option` kernel module to expose a serial port.
 

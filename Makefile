@@ -15,6 +15,10 @@ test:
 lint:
 	golangci-lint run
 
+# Vulnerabilities the code can reach, from the Go vulnerability database.
+audit:
+	go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+
 build-amd64:
 	GOOS=linux GOARCH=amd64 go build $(LDFLAGS) -o $(BINARY) .
 
@@ -44,4 +48,4 @@ restart:
 status:
 	ssh $(REMOTE) sudo systemctl status $(BINARY)
 
-.PHONY: build test lint build-amd64 build-arm64 build-arm deploy logs start stop restart status
+.PHONY: build test lint audit build-amd64 build-arm64 build-arm deploy logs start stop restart status

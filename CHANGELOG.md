@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `make audit` runs `govulncheck` to report reachable vulnerabilities; a `vuln` CI workflow runs it on push, pull requests, and weekly.
+- Dependabot keeps Go modules and GitHub Actions current with weekly grouped updates.
+
 ## [0.7.8] - 2026-06-19
 
 ### Fixed
