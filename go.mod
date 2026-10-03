@@ -5,11 +5,10 @@ go 1.26.8
 require (
 	github.com/eclipse/paho.mqtt.golang v1.5.1
 	github.com/rs/zerolog v1.35.1
-	go.bug.st/serial v1.6.4
+	go.bug.st/serial v1.8.0
 )
 
 require (
-	github.com/creack/goselect v0.1.2 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
