@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
-- Go toolchain bumped to 1.26.8 (reachable stdlib vulnerabilities in `net`, `net/textproto`, `crypto/tls`, `crypto/x509`, `encoding/asn1`); `golang.org/x/net` to v0.59.0 and `golang.org/x/sys` to v0.48.0.
+- Go toolchain bumped to 1.27.2 (reachable stdlib vulnerabilities in `net/http`, `net/textproto`, `crypto/tls`, `crypto/x509`, `encoding/asn1`); `golang.org/x/net` to v0.60.0 and `golang.org/x/sys` to v0.48.0.
 
 ## [0.7.8] - 2026-06-19
 
