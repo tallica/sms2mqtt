@@ -9,8 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `make audit` runs `govulncheck` to report reachable vulnerabilities; a `vuln` CI workflow runs it on push, pull requests, and weekly.
+- `make audit` runs `govulncheck` to report reachable vulnerabilities; CI runs it on every change and weekly.
 - Dependabot keeps Go modules and GitHub Actions current with weekly grouped updates.
+- Pushing a `v*` tag publishes a GitHub release via GoReleaser, after tests, lint and audit pass: linux amd64, arm64 and armv7 archives, checksums, and the tag's changelog section as notes.
 
 ### Security
 

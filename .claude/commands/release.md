@@ -27,7 +27,6 @@ Create a new release. The argument is the version bump type: `patch`, `minor`, o
    git push && git push origin vX.Y.Z
    ```
 
-   Note: the version string in the binary comes from `git describe --tags` via ldflags in the
-   Makefile — no source file needs updating. Tagging is sufficient.
+   Pushing the tag triggers the `release` job in `.github/workflows/ci.yml`: after test, lint and audit pass, GoReleaser builds linux amd64/arm64/armv7 archives and publishes a GitHub release whose notes are the tag's `CHANGELOG.md` section. The binary version comes from the tag via ldflags.
 
 Report the new version and tag when done.

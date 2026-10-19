@@ -1,0 +1,52 @@
+version: 2
+project_name: sms2mqtt
+
+# The markdown that goes into the archives is rewritten copies, staged outside
+# dist/ because --clean wipes that before the hooks run: unpacked somewhere
+# else, relative links have nothing to resolve against.
+before:
+  hooks:
+    - go mod tidy
+    - sh -c 'mkdir -p .archive'
+    - sh -c 'for f in README.md CHANGELOG.md; do scripts/absolute-links.sh {{ .Tag }} < "$f" > ".archive/$f"; done'
+
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm64
+      - arm
+    goarm:
+      - "7"
+    mod_timestamp: "{{ .CommitTimestamp }}"
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w
+      - -X main.version={{ .Version }}
+
+archives:
+  - formats:
+      - tar.gz
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}"
+    files:
+      - src: .archive/*.md
+        strip_parent: true
+      - LICENSE
+      - sms2mqtt.service
+      - .env.example
+
+checksum:
+  name_template: checksums.txt
+  algorithm: sha256
+
+# The release notes are the tag's CHANGELOG.md section, which the workflow
+# passes as --release-notes; given that, no log of commit subjects is built.
+# Leave the changelog enabled: disabling it also skips loading that file,
+# and the release goes out with an empty body.
+
+release:
+  mode: replace
